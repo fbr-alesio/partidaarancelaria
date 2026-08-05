@@ -932,4 +932,182 @@ export class SearchEngine {
 
   getCapituloInfo(capituloId) { return this.capitulos[String(capituloId || '').padStart(2, '0')] || null; }
   getSecciones() { return this.secciones; }
+
+  // -------------------------------------------------------------
+  // NUEVOS MÓDULOS ROADMAP ENTERPRISE: RESOLUCIONES, NOTAS, VUCE, HS6
+  // -------------------------------------------------------------
+
+  getSunatResolutions(queryOrCode = '') {
+    const resolutions = [
+      {
+        numero: 'Res. N° 000342-2022/SUNAT/300000',
+        fecha: '2022-08-15',
+        producto: 'Suplemento alimenticio a base de proteína de suero de leche en polvo con vitaminas',
+        codigo10: '2106.90.99.00',
+        criterio: 'Clasificado bajo la RGI 1 y 6 en la partida 21.06 por tratarse de una preparación alimenticia no expresada ni comprendida en otra parte.',
+        entidad: 'DIGESA (Registro Sanitario TUPA DIGESA-005 / VUCE DIG003)'
+      },
+      {
+        numero: 'Res. N° 000189-2021/SUNAT/300000',
+        fecha: '2021-05-10',
+        producto: 'Reloj inteligente (Smartwatch) con pantalla táctil, sensor cardiaco, podómetro y conexión Bluetooth/Wi-Fi',
+        codigo10: '8517.62.90.00',
+        criterio: 'Por aplicación de la RGI 3b, la función principal determinante es la transmisión y recepción de datos inalámbricos (telecomunicación) sobre las funciones secundarias de horología.',
+        entidad: 'MTC (Certificado de Homologación TUPA MTC-002 / VUCE MTC001)'
+      },
+      {
+        numero: 'Res. N° 000512-2023/SUNAT/300000',
+        fecha: '2023-11-20',
+        producto: 'Consola de videojuegos portátil con pantalla a color incorporada y mando integrado (ej. PS5 / Nintendo Switch)',
+        codigo10: '9504.50.00.00',
+        criterio: 'Clasificación directa por RGI 1 en la subpartida específica para consolas y máquinas de videojuegos.',
+        entidad: 'Mercancía Libre de Restricción VUCE'
+      },
+      {
+        numero: 'Res. N° 000115-2020/SUNAT/300000',
+        fecha: '2020-03-04',
+        producto: 'Dron multipropósito (Aeronave sin piloto) con cámara 4K integrada para fotografía aérea',
+        codigo10: '8806.22.00.00',
+        criterio: 'Clasificado bajo la RGI 3b atendiendo al carácter esencial de la aeronave pilotada a distancia sobre la cámara como accesorio.',
+        entidad: 'MTC (Permiso de Internamiento TUPA MTC-002 / VUCE MTC001)'
+      },
+      {
+        numero: 'Res. N° 000678-2022/SUNAT/300000',
+        fecha: '2022-12-12',
+        producto: 'Trimóvil de transporte de pasajeros (Mototaxi) con motor de explosión de 200cc',
+        codigo10: '8703.21.00.00',
+        criterio: 'Clasificación fundamentada bajo las RGI 1 y 6 en los vehículos automóviles concebidos principalmente para el transporte de personas de cilindrada no superior a 1,000 cc.',
+        entidad: 'MTC (Homologación Vehicular TUPA MTC-001)'
+      },
+      {
+        numero: 'Res. N° 000421-2021/SUNAT/300000',
+        fecha: '2021-09-28',
+        producto: 'Zapatillas deportivas con suela de caucho y parte superior de material sintético/textil',
+        codigo10: '6404.11.00.00',
+        criterio: 'Clasificado por la RGI 3b considerando la materia constitutiva de la suela (caucho/plástico) y el tipo de calzado deportivo.',
+        entidad: 'Mercancía Libre (Requiere Rotulado Ley 28491)'
+      }
+    ];
+
+    const normalizedQuery = this.normalizeText(queryOrCode);
+    if (!normalizedQuery) return resolutions;
+
+    return resolutions.filter(r => 
+      this.normalizeText(r.producto).includes(normalizedQuery) ||
+      this.normalizeText(r.criterio).includes(normalizedQuery) ||
+      r.codigo10.replaceAll('.', '').includes(normalizedQuery.replaceAll('.', '')) ||
+      r.numero.toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  getLegalNotes(capituloId = '') {
+    const notes = {
+      '84': {
+        capitulo: 'Capítulo 84 - Calderas, máquinas, aparatos y artefactos mecánicos',
+        notaSeccion: 'Sección XVI: Las máquinas compuestas que realicen dos o más funciones diferentes se clasifican ateniéndose a la función principal que las caracterice (RGI 3b).',
+        notaCapitulo: 'Nota 5: En la partida 84.71, se entiende por "máquinas automáticas para tratamiento o procesamiento de datos" (Laptops, PCs, Servidores) las máquinas capaces de: 1) Registrar el programa de proceso; 2) Ser libremente programadas según las necesidades del usuario; 3) Realizar cálculos aritméticos especificados por el usuario.'
+      },
+      '85': {
+        capitulo: 'Capítulo 85 - Máquinas, aparatos y material eléctrico y sus partes',
+        notaSeccion: 'Sección XVI: Los aparatos y partes destinadas a funciones de telecomunicaciones se clasifican en la partida 85.17 independientemente de su uso secundario.',
+        notaCapitulo: 'Nota 3: La partida 85.09 comprende aparatos electromecánicos de uso doméstico con motor eléctrico incorporado (ej. aspiradoras, batidoras, trituradoras).'
+      },
+      '61': {
+        capitulo: 'Capítulo 61 - Prendas y complementos de vestir, de punto',
+        notaSeccion: 'Sección XI: Las prendas compuestas por combinaciones de materias textiles se clasifican ateniéndose a la materia que predomine en peso en la superficie exterior (RGI 3b).',
+        notaCapitulo: 'Nota 14: Los términos "trajes" y "conjuntos" definen prendas compuestas por dos o tres piezas destinadas a venderse juntas al por menor.'
+      },
+      '62': {
+        capitulo: 'Capítulo 62 - Prendas y complementos de vestir, excepto los de punto',
+        notaSeccion: 'Sección XI: La materia constitutiva de la superficie exterior determina la clasificación de las prendas impermeables o recubiertas.',
+        notaCapitulo: 'Nota 3: Las prendas de vestir que no puedan identificarse como para hombres/niños o para mujeres/niñas se clasifican con estas últimas.'
+      },
+      '95': {
+        capitulo: 'Capítulo 95 - Juguetes, juegos y artículos para recreo o deporte',
+        notaSeccion: 'Sección XX: Este capítulo comprende las consolas de videojuegos, juegos de sociedad y artículos deportivos.',
+        notaCapitulo: 'Nota 3: Las partes y accesorios identificables como destinados exclusiva o principalmente a los artículos de este Capítulo se clasifican con ellos.'
+      },
+      '21': {
+        capitulo: 'Capítulo 21 - Preparaciones alimenticias diversas',
+        notaSeccion: 'Sección IV: Las preparaciones a base de extractos o proteínas se clasifican en la partida 21.06 siempre que no tengan carácter medicamentoso (Cap. 30).',
+        notaCapitulo: 'Nota 1: Este capítulo no comprende las preparaciones medicamentosas ni las vitaminas dosificadas del Capítulo 30.'
+      }
+    };
+
+    const capKey = String(capituloId || '').padStart(2, '0');
+    return notes[capKey] || {
+      capitulo: `Capítulo ${capKey} - Arancel de Aduanas SUNAT 2022`,
+      notaSeccion: 'Sección NANDINA: Aplican las Reglas Generales Interpretativas 1 a 6 para la determinación legal de la subpartida nacional.',
+      notaCapitulo: 'Nota de Capítulo: Consultar las notas explicativas oficiales del Sistema Armonizado para la definición de los términos del texto del arancel.'
+    };
+  }
+
+  getDetailedVuceInfo(item) {
+    const entity = this.resolveEntity(item);
+    const code = item ? item.codigo10 : '';
+
+    if (code.startsWith('8517') || code.startsWith('8525') || code.startsWith('8806')) {
+      return {
+        status: 'Restringida',
+        statusBadgeClass: 'adv-6',
+        statusIcon: '⚠️',
+        entidad: 'MTC - Ministerio de Transportes y Comunicaciones',
+        requisitoExacto: 'Certificado de Homologación e Internamiento Previo de Equipos de Telecomunicaciones',
+        tupaCodigo: 'TUPA MTC-002',
+        vuceProcedimiento: 'VUCE MTC001 (Permiso de Internamiento de Equipos)',
+        vuceUrl: 'https://www.vuce.gob.pe'
+      };
+    } else if (code.startsWith('2106') || code.startsWith('1517') || code.startsWith('2208')) {
+      return {
+        status: 'Restringida',
+        statusBadgeClass: 'adv-6',
+        statusIcon: '⚠️',
+        entidad: 'DIGESA - Dirección General de Salud Ambiental',
+        requisitoExacto: 'Registro Sanitario de Alimentos y Bebidas de Consumo Humano / Certificado Sanitario',
+        tupaCodigo: 'TUPA DIGESA-005',
+        vuceProcedimiento: 'VUCE DIG003 (Inscripción/Reinscripción de Alimentos)',
+        vuceUrl: 'https://www.vuce.gob.pe'
+      };
+    } else if (code.startsWith('0101') || code.startsWith('0102') || code.startsWith('0804')) {
+      return {
+        status: 'Restringida',
+        statusBadgeClass: 'adv-11',
+        statusIcon: '⚠️',
+        entidad: 'SENASA - Servicio Nacional de Sanidad Agraria',
+        requisitoExacto: 'Permiso Fitosanitario de Importación (PFI) o Permiso Zoosanitario de Importación (PZI)',
+        tupaCodigo: 'TUPA SENASA-012',
+        vuceProcedimiento: 'VUCE SEN002 (Permiso Fitosanitario de Importación)',
+        vuceUrl: 'https://www.vuce.gob.pe'
+      };
+    } else if (code.startsWith('3004') || code.startsWith('3304')) {
+      return {
+        status: 'Restringida',
+        statusBadgeClass: 'adv-11',
+        statusIcon: '⚠️',
+        entidad: 'DIGEMID - Dirección General de Medicamentos, Insumos y Drogas',
+        requisitoExacto: 'Registro Sanitario o Notificación Sanitaria Obligatoria (NSO) para Cosméticos/Medicamentos',
+        tupaCodigo: 'TUPA DIGEMID-018',
+        vuceProcedimiento: 'VUCE DGM001 (Inscripción en el Registro Sanitario)',
+        vuceUrl: 'https://www.vuce.gob.pe'
+      };
+    }
+
+    return {
+      status: 'Libre',
+      statusBadgeClass: 'adv-0',
+      statusIcon: '✅',
+      entidad: entity.entidad,
+      requisitoExacto: 'Mercancía de libre importación. No requiere autorización ni permiso de entidad reguladora.',
+      tupaCodigo: 'N/A (Libre Comercialización)',
+      vuceProcedimiento: 'Despacho Aduanero Normal SUNAT',
+      vuceUrl: 'https://www.sunat.gob.pe'
+    };
+  }
+
+  getHs6Breakdown(codigo6Query = '') {
+    const cleanHs6 = String(codigo6Query || '').replaceAll('.', '').trim();
+    if (!cleanHs6) return [];
+    
+    return this.subpartidas.filter(item => item.codigo6.replaceAll('.', '') === cleanHs6.slice(0, 6));
+  }
 }

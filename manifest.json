@@ -1,0 +1,16 @@
+{
+  "short_name": "PartidaArancelaria",
+  "name": "PartidaArancelaria B2B - Clasificador Aduanero SUNAT",
+  "icons": [
+    {
+      "src": "./src/assets/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "display": "standalone",
+  "orientation": "portrait"
+}

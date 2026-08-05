@@ -570,6 +570,8 @@ function updateActiveItemPanel(item) {
 
   // Actualizar Pestaña de Justificación Jurídica RGI Automática
   renderDynamicRgiTab(item);
+  renderResolucionesTab(item.codigo10);
+  renderNotasLegalesTab(item);
 
   // Event listener para copiar código activo
   document.getElementById('btn-copy-active-code').onclick = () => copyToClipboard(item.codigo10);
@@ -887,6 +889,109 @@ function calculateAndRender() {
 
 function initReglas() {
   renderDynamicRgiTab(state.activeItem);
+  renderResolucionesTab(state.activeItem ? state.activeItem.codigo10 : '');
+  renderNotasLegalesTab(state.activeItem);
+  initRgiWizard();
+}
+
+function initRgiWizard() {
+  const modal = document.getElementById('modal-rgi-wizard');
+  const btnOpen = document.getElementById('btn-open-rgi-wizard');
+  const btnClose = document.getElementById('btn-close-rgi-modal');
+  const btnRun = document.getElementById('btn-run-rgi-diagnosis');
+  const output = document.getElementById('rgi-diagnosis-output');
+
+  if (btnOpen) btnOpen.onclick = () => modal.classList.remove('hidden');
+  if (btnClose) btnClose.onclick = () => modal.classList.add('hidden');
+
+  if (btnRun) {
+    btnRun.onclick = () => {
+      const isSet = document.querySelector('input[name="rgi-p1"]:checked')?.value === 'rgi3b';
+      const factor = document.getElementById('rgi-p2-factor')?.value || 'funcion';
+
+      output.classList.remove('hidden');
+      if (!isSet) {
+        output.innerHTML = `
+          <h4 style="color: var(--accent-blue); font-size: 13px; font-weight: 700;">⚖️ Diagnóstico RGI 1 (Denominación Directa Especifica)</h4>
+          <p style="margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            Por tratarse de un artículo individual con denominación técnica expresa en el arancel, la clasificación se rige estrictamente por la <strong>RGI 1 y RGI 6</strong>. Prevalece el texto de la subpartida nacional a 10 dígitos sobre cualquier interpretación general.
+          </p>
+        `;
+      } else if (factor === 'funcion') {
+        output.innerHTML = `
+          <h4 style="color: var(--accent-blue); font-size: 13px; font-weight: 700;">⚖️ Diagnóstico RGI 3b (Carácter Esencial por Función Principal)</h4>
+          <p style="margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            En cumplimiento de la <strong>Regla General Interpretativa 3b</strong>, los productos presentados en surtidos o juegos al por menor se clasifican atendiendo al componente que le confiere su <strong>función técnica determinante</strong>.
+          </p>
+          <div style="margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--accent-green);">✓ Fundamento Legal: Criterio Vinculante OMA / SUNAT - RGI 3b</div>
+        `;
+      } else if (factor === 'materia') {
+        output.innerHTML = `
+          <h4 style="color: var(--accent-blue); font-size: 13px; font-weight: 700;">⚖️ Diagnóstico RGI 3b (Materia Constitutiva Predominante en Peso/Superficie)</h4>
+          <p style="margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            Clasificación asignada por el material o materia prima que le otorga el carácter esencial en volumen, peso exterior o superficie expuesta (ej. caucho, textil o plástico).
+          </p>
+        `;
+      } else {
+        output.innerHTML = `
+          <h4 style="color: var(--accent-blue); font-size: 13px; font-weight: 700;">⚖️ Diagnóstico RGI 3c (Resolución por Último Orden Numérico)</h4>
+          <p style="margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            Al no ser posible determinar el carácter esencial por las Reglas 3a ni 3b, la <strong>RGI 3c</strong> exige clasificar en la <strong>última subpartida por orden numérico</strong> entre las susceptibles de tenerse en cuenta.
+          </p>
+        `;
+      }
+    };
+  }
+}
+
+function renderResolucionesTab(query = '') {
+  const container = document.getElementById('sunat-resolutions-list');
+  if (!container) return;
+
+  const resolutions = state.searchEngine.getSunatResolutions(query || (state.activeItem ? state.activeItem.codigo10 : ''));
+  if (!resolutions.length) {
+    container.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted);">Sin resoluciones específicas registradas para esta búsqueda.</div>`;
+    return;
+  }
+
+  container.innerHTML = resolutions.map(r => `
+    <div style="padding: 14px; border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--bg-app);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        <span style="font-weight: 700; color: var(--accent-blue); font-size: 13px;">📜 ${r.numero}</span>
+        <span class="adv-pill adv-0" style="font-size: 10px;">${r.fecha}</span>
+      </div>
+      <div style="margin-top: 8px; font-weight: 700; color: var(--text-main); font-size: 13px;">${r.producto}</div>
+      <div style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${r.criterio}</div>
+      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+        <span style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-blue);">Subpartida Asignada: ${r.codigo10}</span>
+        <span style="color: var(--text-muted);">${r.entidad}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderNotasLegalesTab(item = state.activeItem) {
+  const container = document.getElementById('legal-notes-container');
+  if (!container) return;
+
+  const capId = item ? item.capitulo : '84';
+  const notes = state.searchEngine.getLegalNotes(capId);
+
+  container.innerHTML = `
+    <div style="padding: 16px; border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app); display: grid; gap: 12px;">
+      <h4 style="color: var(--accent-blue); font-size: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">${notes.capitulo}</h4>
+      
+      <div>
+        <strong style="color: var(--text-main); font-size: 12px;">📌 Nota de Sección (Vinculante):</strong>
+        <p style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${notes.notaSeccion}</p>
+      </div>
+
+      <div style="padding: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px;">
+        <strong style="color: var(--accent-blue); font-size: 12px;">📑 Nota Explicativa de Capítulo:</strong>
+        <p style="margin-top: 4px; font-size: 12px; color: var(--text-main); line-height: 1.5;">${notes.notaCapitulo}</p>
+      </div>
+    </div>
+  `;
 }
 
 function renderDynamicRgiTab(item = state.activeItem) {

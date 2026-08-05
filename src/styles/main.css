@@ -152,6 +152,15 @@ body {
   font-size: 22px;
 }
 
+.brand-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
 .brand-name {
   font-family: var(--font-display);
   font-size: 18px;
@@ -697,6 +706,9 @@ body {
 .data-table-wrapper {
   border: 1px solid var(--border-color);
   border-radius: 6px;
+  background: var(--bg-panel);
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
   overflow-x: auto;
 }
 
@@ -1152,4 +1164,85 @@ body.theme-dark mark {
 
 .hidden {
   display: none !important;
+}
+
+/* -------------------------------------------------------------
+ * 10. ADAPTATIVIDAD PARA SMARTPHONES & TABLETS (RESPONSIVE MOBILE)
+ * ------------------------------------------------------------- */
+@media (max-width: 900px) {
+  body {
+    overflow-y: auto;
+  }
+
+  .enterprise-header {
+    height: auto;
+    padding: 10px 12px;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .brand-block {
+    justify-content: space-between;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .global-search-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .workbench-container {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .panel-left-tree {
+    width: 100%;
+    max-height: 280px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .panel-center-main {
+    width: 100%;
+    border-right: none;
+  }
+
+  .panel-right-tech {
+    width: 100%;
+    border-top: 1.5px solid var(--border-color);
+  }
+
+  .modal-workbench.modal-lg {
+    width: 94% !important;
+    max-height: 94vh;
+    padding: 14px;
+    margin: 10px auto;
+  }
+
+  .calc-section-card {
+    padding: 12px;
+  }
+
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .comparator-grid-container {
+    grid-template-columns: 1fr;
+  }
 }

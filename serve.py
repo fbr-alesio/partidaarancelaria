@@ -50,7 +50,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             tc_data = self.fetch_sunat_exchange_rate()
             self.send_json(200, tc_data)
             return
-        super().do_GET()
+        if self.path == "/" or self.path == "":
+            self.path = "/index.html"
+        self.directory = DIRECTORY
+        return super().do_GET()
 
     def fetch_sunat_exchange_rate(self):
         """Obtiene el Tipo de Cambio Oficial SUNAT / SBS para importación."""

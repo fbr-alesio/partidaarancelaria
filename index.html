@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PartidaArancelaria | Clasificador Arancelario SUNAT & NANDINA 2022</title>
   <meta name="description" content="Plataforma B2B oficial de consulta y clasificación de partidas arancelarias SUNAT / NANDINA 2022 en Perú. Buscador inteligente, tributos, VUCE y simulador CIF.">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
@@ -16,7 +20,7 @@
   <header class="enterprise-header">
     <div class="header-inner">
       <div class="brand-block">
-        <span class="brand-logo">🛡️</span>
+        <img src="./src/assets/logo.jpg" alt="PartidaArancelaria Logo" class="brand-logo-img">
         <div class="brand-titles">
           <span class="brand-name">Partida<span class="accent">Arancelaria</span> <span class="badge-enterprise">B2B</span></span>
           <span class="brand-sub">Buscador Oficial de Partidas Arancelarias SUNAT & NANDINA 2022</span>
@@ -93,6 +97,12 @@
         <button class="center-tab" data-centertab="tab-rgi">
           ⚖️ Reglas de Interpretación (RGI)
         </button>
+        <button class="center-tab" data-centertab="tab-resoluciones">
+          📜 Resoluciones SUNAT
+        </button>
+        <button class="center-tab" data-centertab="tab-notas">
+          📑 Notas Legales
+        </button>
         <button class="center-tab" data-centertab="tab-historico">
           📜 Correlativa & Enmiendas
         </button>
@@ -140,9 +150,42 @@
       <!-- Pestaña Central 2: Reglas de Interpretación RGI -->
       <div id="tab-rgi" class="center-tab-content">
         <div class="rgi-panel-content card-inner-panel">
-          <h3>⚖️ Reglas Generales Interpretativas (RGI) de la OMA & SUNAT</h3>
-          <p class="panel-subtitle">Principios jurídicos fundamentales para determinar la correcta clasificación arancelaria.</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div>
+              <h3>⚖️ Reglas Generales Interpretativas (RGI) de la OMA & SUNAT</h3>
+              <p class="panel-subtitle">Principios jurídicos fundamentales para determinar la correcta clasificación arancelaria.</p>
+            </div>
+            <button id="btn-open-rgi-wizard" class="btn-compare-trigger" style="margin: 0; background: var(--accent-blue); color: #fff;">🧙‍♂️ Asistente RGI (Carácter Esencial)</button>
+          </div>
           <div id="reglas-list-grid" class="rgi-grid-container"></div>
+        </div>
+      </div>
+
+      <!-- Pestaña Central 3: Criterios Vinculantes & Resoluciones SUNAT -->
+      <div id="tab-resoluciones" class="center-tab-content">
+        <div class="card-inner-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <div>
+              <h3>📜 Criterios Vinculantes & Resoluciones Intendenciales SUNAT</h3>
+              <p class="panel-subtitle">Jurisprudencia arancelaria oficial dictada por la Intendencia Nacional de Desarrollo de Estrategia Aduanera.</p>
+            </div>
+          </div>
+          <div id="sunat-resolutions-list" style="display: grid; gap: 12px;">
+            <!-- Resoluciones SUNAT renderizadas dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña Central 4: Notas Legales de Capítulo y Sección -->
+      <div id="tab-notas" class="center-tab-content">
+        <div class="card-inner-panel">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3>📑 Notas Legales de Sección y Capítulo (Sistema Armonizado)</h3>
+            <p class="panel-subtitle">Textos normativos de observancia obligatoria para definir el alcance exacto de partidas y mercancías compuestas.</p>
+          </div>
+          <div id="legal-notes-container">
+            <!-- Notas legales renderizadas dinámicamente -->
+          </div>
         </div>
       </div>
 
@@ -432,6 +475,54 @@
       </form>
 
       <div id="calc-results-output" style="margin-top: 15px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal Asistente Guiado RGI (Carácter Esencial & Regla 3b/3c) -->
+  <div id="modal-rgi-wizard" class="modal-backdrop hidden">
+    <div class="modal-workbench modal-lg">
+      <button id="btn-close-rgi-modal" class="modal-close-btn">✕</button>
+      <h2>🧙‍♂️ Asistente de Clasificación Guiado por Reglas Interpretativas (RGI)</h2>
+      <p class="modal-subtitle">Diagnóstico legal paso a paso para resolver la clasificación de juegos, sets o mercancías compuestas.</p>
+
+      <div id="rgi-wizard-container" style="margin-top: 18px; display: grid; gap: 16px;">
+        <div class="calc-section-card">
+          <div class="calc-section-title">❓ Paso 1: Tipo de Producto / Presentación Comercial</div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">¿Cuál es la naturaleza física y empaque de la mercancía que vas a importar?</p>
+          <div style="display: grid; gap: 8px;">
+            <label class="vuce-check-item">
+              <input type="radio" name="rgi-p1" value="rgi1" checked>
+              <span><strong>Producto Único / Específico:</strong> Un artículo individual con denominación técnica directa en el arancel.</span>
+            </label>
+            <label class="vuce-check-item">
+              <input type="radio" name="rgi-p1" value="rgi3b">
+              <span><strong>Juego / Set / Mezcla o Artículo Compuesto:</strong> Presentado en surtido o formado por dos o más componentes de materias distintas.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="calc-section-card">
+          <div class="calc-section-title">⚖️ Paso 2: Análisis del Carácter Esencial (Regla 3b)</div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">En caso de ser una mezcla o set comercial, ¿cuál componente otorga la función principal o peso determinante?</p>
+          <select id="rgi-p2-factor" class="form-control">
+            <option value="funcion" selected>🎯 Función Técnica Principal (Uso predominante del producto)</option>
+            <option value="materia">⚖️ Materia Constitutiva Predominante (Mayor peso o superficie en caucho/plástico/metal)</option>
+            <option value="valor">💰 Valor Comercial (Componente de mayor costo monetario del conjunto)</option>
+            <option value="iguales">⚖️ Ninguno / Todos los componentes son de igual importancia (Indivisibles)</option>
+          </select>
+        </div>
+
+        <div class="calc-section-card">
+          <div class="calc-section-title">🔢 Paso 3: Resolución por Orden Numérico (Regla 3c)</div>
+          <p style="font-size: 12px; color: var(--text-secondary);">Si la Regla 3b no permite dirimir, la RGI 3c establece clasificar en la **última subpartida por orden numérico** entre las susceptibles de tenerse en cuenta.</p>
+        </div>
+
+        <button id="btn-run-rgi-diagnosis" class="btn-primary-action btn-hero-submit" type="button">
+          ⚖️ Generar Diagnóstico Jurídico RGI Vinculante
+        </button>
+
+        <div id="rgi-diagnosis-output" class="hidden" style="margin-top: 10px; padding: 14px; border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app);"></div>
+      </div>
     </div>
   </div>
 
