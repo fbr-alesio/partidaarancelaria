@@ -1,0 +1,251 @@
+import json
+import os
+
+# Generador de dataset exhaustivo del Arancel de Aduanas SUNAT 2022 (NANDINA)
+
+secciones = [
+  {"id": "I", "nombre": "ANIMALES VIVOS Y PRODUCTOS DEL REINO ANIMAL", "capitulos": ["01", "02", "03", "04", "05"]},
+  {"id": "II", "nombre": "PRODUCTOS DEL REINO VEGETAL", "capitulos": ["06", "07", "08", "09", "10", "11", "12", "13", "14"]},
+  {"id": "III", "nombre": "GRASAS Y ACEITES ANIMALES, VEGETALES O DE ORIGEN MICROBIANO", "capitulos": ["15"]},
+  {"id": "IV", "nombre": "PRODUCTOS DE LAS INDUSTRIAS ALIMENTARIAS; BEBIDAS, LÍQUIDOS ALCOHÓLICOS Y TABACO", "capitulos": ["16", "17", "18", "19", "20", "21", "22", "23", "24"]},
+  {"id": "V", "nombre": "PRODUCTOS MINERALES", "capitulos": ["25", "26", "27"]},
+  {"id": "VI", "nombre": "PRODUCTOS DE LAS INDUSTRIAS QUÍMICAS O DE LAS INDUSTRIAS CONEXAS", "capitulos": ["28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38"]},
+  {"id": "VII", "nombre": "PLÁSTICOS Y SUS MANUFACTURAS; CAUCHO Y SUS MANUFACTURAS", "capitulos": ["39", "40"]},
+  {"id": "VIII", "nombre": "PIELES, CUEROS, PELETERÍA Y MANUFACTURAS DE ESTAS MATERIAS", "capitulos": ["41", "42", "43"]},
+  {"id": "IX", "nombre": "MADERA, CARBÓN VEGETAL Y MANUFACTURAS DE MADERA; CORCHO; CESTERÍA", "capitulos": ["44", "45", "46"]},
+  {"id": "X", "nombre": "PASTA DE MADERA; PAPEL O CARTÓN Y SUS APLICACIONES", "capitulos": ["47", "48", "49"]},
+  {"id": "XI", "nombre": "MATERIAS TEXTILES Y SUS MANUFACTURAS", "capitulos": ["50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63"]},
+  {"id": "XII", "nombre": "CALZADO, SOMBREROS, PARAGUAS, BASTONES, PLUMAS PREPARADAS", "capitulos": ["64", "65", "66", "67"]},
+  {"id": "XIII", "nombre": "MANUFACTURAS DE PIEDRA, YESO, CEMENTO, CERÁMICA, VIDRIO", "capitulos": ["68", "69", "70"]},
+  {"id": "XIV", "nombre": "PERLAS NATURALES, PIEDRAS PRECIOSAS, METALES PRECIOSOS, BISUTERÍA", "capitulos": ["71"]},
+  {"id": "XV", "nombre": "METALES COMUNES Y MANUFACTURAS DE ESTOS METALES", "capitulos": ["72", "73", "74", "75", "76", "78", "79", "80", "81", "82", "83"]},
+  {"id": "XVI", "nombre": "MÁQUINAS Y APARATOS, MATERIAL ELÉCTRICO Y SUS PARTES; GRABACIÓN/REPRODUCCIÓN", "capitulos": ["84", "85"]},
+  {"id": "XVII", "nombre": "MATERIAL DE TRANSPORTE (VEHÍCULOS, AERONAVES, BARCOS)", "capitulos": ["86", "87", "88", "89"]},
+  {"id": "XVIII", "nombre": "INSTRUMENTOS DE ÓPTICA, FOTOGRAFÍA, CINEMATOGRAFÍA, MÉDICOS, RELOJERÍA", "capitulos": ["90", "91", "92"]},
+  {"id": "XIX", "nombre": "ARMAS Y MUNICIONES; SUS PARTES Y ACCESORIOS", "capitulos": ["93"]},
+  {"id": "XX", "nombre": "MERCANCÍAS Y PRODUCTOS DIVERSOS (MUEBLES, JUGUETES, ALUMBRADO)", "capitulos": ["94", "95", "96"]},
+  {"id": "XXI", "nombre": "OBJETOS DE ARTE, DE COLECCIÓN O DE ANTIGÜEDAD", "capitulos": ["97"]}
+]
+
+capitulos = {
+  "01": {"nombre": "Animales vivos (Caballos, Bovinos, Porcinos, Ovinos)", "seccion": "I"},
+  "02": {"nombre": "Carne y despojos comestibles (Bovino, Porcino, Pollo, Pavo)", "seccion": "I"},
+  "03": {"nombre": "Peces y crustáceos, moluscos (Pescado fresco, Langostinos, Calamar)", "seccion": "I"},
+  "04": {"nombre": "Leche y productos lácteos; huevos de ave; miel natural (Quesos, Mantequilla)", "seccion": "I"},
+  "05": {"nombre": "Los demás productos de origen animal no expresados", "seccion": "I"},
+  "06": {"nombre": "Plantas vivas y productos de la floricultura (Rosas, Flores)", "seccion": "II"},
+  "07": {"nombre": "Hortalizas, plantas, raíces y tubérculos (Papa, Tomate, Cebolla)", "seccion": "II"},
+  "08": {"nombre": "Frutas y frutos comestibles (Palta, Uva, Arándanos, Mangos, Plátanos)", "seccion": "II"},
+  "09": {"nombre": "Café, té, yerba mate y especias (P pimienta, Canela, Comino)", "seccion": "II"},
+  "10": {"nombre": "Cereales (Maíz, Arroz, Trigo, Quinua, Cebada)", "seccion": "II"},
+  "11": {"nombre": "Productos de la molinería; malta; almidones (Harina de trigo)", "seccion": "II"},
+  "12": {"nombre": "Semillas y frutos oleaginosos; plantas industriales (Soya, Girasol)", "seccion": "II"},
+  "13": {"nombre": "Gomas, resinas y demás jugos y extractos vegetales (Tara)", "seccion": "II"},
+  "14": {"nombre": "Materias trenzables y demás productos de origen vegetal", "seccion": "II"},
+  "15": {"nombre": "Grasas y aceites animales o vegetales (Aceite de oliva, Soya, Palma)", "seccion": "III"},
+  "16": {"nombre": "Preparaciones de carne, pescado o crustáceos (Conservas de atún)", "seccion": "IV"},
+  "17": {"nombre": "Azúcares y artículos de confitería (Azúcar de caña, Caramelos)", "seccion": "IV"},
+  "18": {"nombre": "Cacao y sus preparaciones (Chocolate en barra, Cacao en polvo)", "seccion": "IV"},
+  "19": {"nombre": "Preparaciones a base de cereales (Pastas, Galletas, Pan)", "seccion": "IV"},
+  "20": {"nombre": "Preparaciones de hortalizas o frutas (Jermeladas, Jugos)", "seccion": "IV"},
+  "21": {"nombre": "Preparaciones alimenticias diversas (Salsas, Condimentos)", "seccion": "IV"},
+  "22": {"nombre": "Bebidas, líquidos alcohólicos y vinagre (Pisco, Cerveza, Vino, Ron, Agua)", "seccion": "IV"},
+  "23": {"nombre": "Residuos y desperdicios de las industrias alimentarias (Harina de pescado)", "seccion": "IV"},
+  "24": {"nombre": "Tabaco y sucedáneos del tabaco elaborados (Cigarrillos)", "seccion": "IV"},
+  "25": {"nombre": "Sal; azufre; tierras y piedras; yeso, cal y cemento", "seccion": "V"},
+  "26": {"nombre": "Minerales metalíferos, cenicias y escorias (Cobre, Zinc, Hierro)", "seccion": "V"},
+  "27": {"nombre": "Combustibles minerales, aceites minerales (Petróleo, Gasolina, Diésel)", "seccion": "V"},
+  "28": {"nombre": "Productos químicos inorgánicos (Ácido sulfúrico, Cloro)", "seccion": "VI"},
+  "29": {"nombre": "Productos químicos orgánicos (Alcohol etílico, Reactivos)", "seccion": "VI"},
+  "30": {"nombre": "Productos farmacéuticos (Medicamentos, Vacunas, Vitaminas)", "seccion": "VI"},
+  "31": {"nombre": "Abonos y fertilizantes (Urea, Nitrato, Fosfato)", "seccion": "VI"},
+  "32": {"nombre": "Extractos curtientes; pinturas, barnices y tintas", "seccion": "VI"},
+  "33": {"nombre": "Aceites esenciales; perfumería, cosméticos y maquillaje", "seccion": "VI"},
+  "34": {"nombre": "Jabón, agentes de superficie orgánicos, detergentes, ceras", "seccion": "VI"},
+  "35": {"nombre": "Materias albuminoideas; productos a base de almidón; colas; enzimas", "seccion": "VI"},
+  "36": {"nombre": "Pólvora y explosivos; artículos de pirotecnia; fósforos", "seccion": "VI"},
+  "37": {"nombre": "Productos fotográficos o cinematográficos", "seccion": "VI"},
+  "38": {"nombre": "Productos diversos de las industrias químicas (Insecticidas, Biodiésel)", "seccion": "VI"},
+  "39": {"nombre": "Plásticos y sus manufacturas (Botellas PET, Fundas, Tubos PVC)", "seccion": "VII"},
+  "40": {"nombre": "Caucho y sus manufacturas (Llantas, Neumáticos, Guantes)", "seccion": "VII"},
+  "41": {"nombre": "Pieles (excepto la peletería) y cueros (Cueros bovinos)", "seccion": "VIII"},
+  "42": {"nombre": "Manufacturas de cuero; artículos de talabartería; bolsos, maletas", "seccion": "VIII"},
+  "43": {"nombre": "Peletería y confecciones de peletería", "seccion": "VIII"},
+  "44": {"nombre": "Madera, carbón vegetal y manufacturas de madera (Maderas aserradas)", "seccion": "IX"},
+  "45": {"nombre": "Corcho y sus manufacturas", "seccion": "IX"},
+  "46": {"nombre": "Manufacturas de espartería o cestería", "seccion": "IX"},
+  "47": {"nombre": "Pasta de madera o de otras materias fibrosas celulósicas", "seccion": "X"},
+  "48": {"nombre": "Papel y cartón; manufacturas de celulosa (Papel bond, Cajas)", "seccion": "X"},
+  "49": {"nombre": "Productos editorial es, de la prensa (Libros, Periódicos, Revistas)", "seccion": "X"},
+  "50": {"nombre": "Seda", "seccion": "XI"},
+  "51": {"nombre": "Lana y pelo fino o ordinario; hilados y tejidos (Alpaca, Lana)", "seccion": "XI"},
+  "52": {"nombre": "Algodón; hilados y tejidos de algodón", "seccion": "XI"},
+  "53": {"nombre": "Las demás fibras textiles vegetales (Yute, Lino)", "seccion": "XI"},
+  "54": {"nombre": "Filamentos sintéticos o artificiales (Poliéster, Nylon)", "seccion": "XI"},
+  "55": {"nombre": "Fibras sintéticas o artificiales discontinuas", "seccion": "XI"},
+  "56": {"nombre": "Guata, fieltro y tela sin tejer; hilos especiales", "seccion": "XI"},
+  "57": {"nombre": "Alfombras y demás revestimientos para el suelo, de materia textil", "seccion": "XI"},
+  "58": {"nombre": "Tejidos especiales; superficies textiles con mechón insertado; encajes", "seccion": "XI"},
+  "59": {"nombre": "Telas impregnadas, recubiertas, revestidas o estratificadas", "seccion": "XI"},
+  "60": {"nombre": "Tejidos de punto", "seccion": "XI"},
+  "61": {"nombre": "Prendas y complementos de vestir, de punto (Polos, T-shirts, Ropa interior)", "seccion": "XI"},
+  "62": {"nombre": "Prendas y complementos de vestir, excepto punto (Jeans, Sacos, Camisas)", "seccion": "XI"},
+  "63": {"nombre": "Los demás artículos textiles confeccionados; juegos; ropa usada", "seccion": "XI"},
+  "64": {"nombre": "Calzado, polainas y artículos análogos; sus partes (Zapatos, Zapatillas)", "seccion": "XII"},
+  "65": {"nombre": "Sombreros, gorras y demás tocados; sus partes", "seccion": "XII"},
+  "66": {"nombre": "Paraguas, sombrillas, bastones, látigos; sus partes", "seccion": "XII"},
+  "67": {"nombre": "Plumas y plumón preparados y artículos de plumas; flores artificiales", "seccion": "XII"},
+  "68": {"nombre": "Manufacturas de piedra, yeso, cemento, amianto, mica (Losa, Baldosas)", "seccion": "XIII"},
+  "69": {"nombre": "Productos cerámicos (Inodoros, Mayólicas, Vajilla cerámicas)", "seccion": "XIII"},
+  "70": {"nombre": "Vidrio y sus manufacturas (Botellas de vidrio, Parabrisas, Vasos)", "seccion": "XIII"},
+  "71": {"nombre": "Perlas, piedras preciosas, metales preciosos (Oro, Plata, Bisutería)", "seccion": "XIV"},
+  "72": {"nombre": "Fundición, hierro y acero (Varillas de construcción, Planchas steel)", "seccion": "XV"},
+  "73": {"nombre": "Manufacturas de fundición, hierro o acero (Tubos, Estructuras, Clavos)", "seccion": "XV"},
+  "74": {"nombre": "Cobre y sus manufacturas (Cables de cobre, Tubos de cobre)", "seccion": "XV"},
+  "75": {"nombre": "Níquel y sus manufacturas", "seccion": "XV"},
+  "76": {"nombre": "Aluminio y sus manufacturas (Perfiles de aluminio, Ventanas)", "seccion": "XV"},
+  "78": {"nombre": "Plomo y sus manufacturas", "seccion": "XV"},
+  "79": {"nombre": "Zinc y sus manufacturas", "seccion": "XV"},
+  "80": {"nombre": "Estaño y sus manufacturas", "seccion": "XV"},
+  "81": {"nombre": "Los demás metales comunes; cermets; manufacturas de estas materias", "seccion": "XV"},
+  "82": {"nombre": "Herramientas y útiles, cubiertos de metal común (Alicates, Llaves)", "seccion": "XV"},
+  "83": {"nombre": "Manufacturas diversas de metal común (Candados, Cerraduras, Bisagras)", "seccion": "XV"},
+  "84": {"nombre": "Reactores nucleares, calderas, máquinas (Laptops, Computadoras, Motores)", "seccion": "XVI"},
+  "85": {"nombre": "Máquinas y material eléctrico (Celulares, TV, Baterías, Cables, Chips)", "seccion": "XVI"},
+  "86": {"nombre": "Vehículos y material para vías férreas o similares", "seccion": "XVII"},
+  "87": {"nombre": "Vehículos automóviles, tractores, motos y sus partes (Autos, SUV, Camiones)", "seccion": "XVII"},
+  "88": {"nombre": "Aeronaves, vehículos espaciales y sus partes (Aviones, Drones)", "seccion": "XVII"},
+  "89": {"nombre": "Barcos, barcas y demás artefactos flotantes", "seccion": "XVII"},
+  "90": {"nombre": "Instrumentos y aparatos de óptica, fotografía, médicos (Gafas, Tomógrafos)", "seccion": "XVIII"},
+  "91": {"nombre": "Relojería (Relojes de pulsera, Despertadores)", "seccion": "XVIII"},
+  "92": {"nombre": "Instrumentos musicales; sus partes y accesorios (Guitarras, Pianos)", "seccion": "XVIII"},
+  "93": {"nombre": "Armas y municiones; sus partes y accesorios", "seccion": "XIX"},
+  "94": {"nombre": "Muebles; mobiliario médicoquirúrgico; luminarias (Sillas, Mesas, Camas)", "seccion": "XX"},
+  "95": {"nombre": "Juguetes, juegos y artículos para recreo o deporte (Juegos de mesa, Pelotas)", "seccion": "XX"},
+  "96": {"nombre": "Manufacturas diversas (Lapiceros, Encendedores, Cepillos de dientes)", "seccion": "XX"},
+  "97": {"nombre": "Objetos de arte, de colección o de antigüedad (Pinturas, Esculturas)", "seccion": "XXI"}
+}
+
+subpartidas_base = [
+  # Capítulo 01 & 02
+  {"codigo10": "0102.21.00.00", "descripcionOficial": "Bovinos vivos domésticos, reproductores de raza pura", "sinonimos": ["vaca de raza", "toro reproductor", "ganado bovino vivo"], "adv": 0, "entidad": "SENASA", "cap": "01", "sec": "I"},
+  {"codigo10": "0201.30.00.00", "descripcionOficial": "Carne de animales de la especie bovina, deshuesada, fresca o refrigerada", "sinonimos": ["carne de res", "lomo de res", "corte de carne bovina"], "adv": 6, "entidad": "SENASA", "cap": "02", "sec": "I"},
+  {"codigo10": "0207.14.00.00", "descripcionOficial": "Trozos y despojos de aves de la especie Gallus domesticus, congelados", "sinonimos": ["pollo congelado", "pechuga de pollo", "pierna de pollo"], "adv": 11, "entidad": "SENASA", "cap": "02", "sec": "I"},
+  # Capítulo 03 & 04
+  {"codigo10": "0306.17.11.00", "descripcionOficial": "Langostinos (Penaeus vannamei) congelados, enteros", "sinonimos": ["langostinos congelados", "camarones", "mariscos"], "adv": 6, "entidad": "SANIPES", "cap": "03", "sec": "I"},
+  {"codigo10": "0406.90.40.00", "descripcionOficial": "Queso Gouda y similares, de pasta dura o semidura", "sinonimos": ["queso gouda", "queso madurado", "queso holandés"], "adv": 6, "entidad": "DIGESA", "cap": "04", "sec": "I"},
+  # Capítulo 07 & 08
+  {"codigo10": "0702.00.00.00", "descripcionOficial": "Tomates frescos o refrigerados", "sinonimos": ["tomate", "tomate fresco", "tomate italiano"], "adv": 6, "entidad": "SENASA", "cap": "07", "sec": "II"},
+  {"codigo10": "0804.40.00.00", "descripcionOficial": "Aguacates (paltas), frescas o secas", "sinonimos": ["palta", "palta hass", "aguacate"], "adv": 6, "entidad": "SENASA", "cap": "08", "sec": "II"},
+  {"codigo10": "0806.10.00.00", "descripcionOficial": "Uvas frescas", "sinonimos": ["uva de mesa", "uva fresca", "uva red globe"], "adv": 6, "entidad": "SENASA", "cap": "08", "sec": "II"},
+  {"codigo10": "0810.40.00.00", "descripcionOficial": "Arándanos rojos, mirtilos y demás frutos del género Vaccinium, frescos", "sinonimos": ["arándanos", "blueberries", "mirtilos"], "adv": 6, "entidad": "SENASA", "cap": "08", "sec": "II"},
+  # Capítulo 09 & 10
+  {"codigo10": "0901.21.00.00", "descripcionOficial": "Café tostado, sin descafeinar", "sinonimos": ["café tostado", "café molido", "café arábica"], "adv": 6, "entidad": "SENASA", "cap": "09", "sec": "II"},
+  {"codigo10": "0902.30.00.00", "descripcionOficial": "Té negro (fermentado) y té parcialmente fermentado, en envases <= 3 kg", "sinonimos": ["té negro", "té en filtrante", "té de jazmín"], "adv": 6, "entidad": "DIGESA", "cap": "09", "sec": "II"},
+  {"codigo10": "1005.90.11.00", "descripcionOficial": "Maíz amarillo duro", "sinonimos": ["maíz amarillo", "maíz duro", "grano de maíz para avicultura"], "adv": 0, "entidad": "SENASA", "cap": "10", "sec": "II"},
+  {"codigo10": "1006.30.00.00", "descripcionOficial": "Arroz blanqueado o pulido, incluso pulido o glaseado", "sinonimos": ["arroz blanco", "arroz pulido", "arroz superior"], "adv": 0, "entidad": "SENASA", "cap": "10", "sec": "II"},
+  {"codigo10": "1008.50.90.00", "descripcionOficial": "Quinua (Chenopodium quinoa), las demás", "sinonimos": ["quinua", "quinoa blanca", "quinua perla"], "adv": 6, "entidad": "SENASA", "cap": "10", "sec": "II"},
+  # Capítulo 15 & 17 & 18
+  {"codigo10": "1509.20.00.00", "descripcionOficial": "Aceite de oliva virgen extra", "sinonimos": ["aceite de oliva extra virgen", "aceite de oliva", "aceite comestible oliva"], "adv": 6, "entidad": "DIGESA", "cap": "15", "sec": "III"},
+  {"codigo10": "1701.99.00.00", "descripcionOficial": "Los demás azúcares de caña o de remolacha, refinados", "sinonimos": ["azúcar blanca", "azúcar refinada", "azúcar de mesa"], "adv": 0, "entidad": "DIGESA", "cap": "17", "sec": "IV"},
+  {"codigo10": "1806.31.00.00", "descripcionOficial": "Chocolate y demás preparaciones alimenticias con cacao, en barras rellenas", "sinonimos": ["chocolate", "chocolate relleno", "bombones"], "adv": 6, "entidad": "DIGESA", "cap": "18", "sec": "IV"},
+  # Capítulo 19 & 22
+  {"codigo10": "1902.19.00.00", "descripcionOficial": "Pastas alimenticias sin cocer, sin rellenar ni preparar de otro modo", "sinonimos": ["fideos", "tallarines", "pastas alimenticias", "spaghetti"], "adv": 6, "entidad": "DIGESA", "cap": "19", "sec": "IV"},
+  {"codigo10": "2203.00.00.00", "descripcionOficial": "Cerveza de malta", "sinonimos": ["cerveza", "cerveza en botella", "cerveza de malta", "cerveza artesanal"], "adv": 6, "entidad": "DIGESA", "cap": "22", "sec": "IV"},
+  {"codigo10": "2204.21.00.00", "descripcionOficial": "Vino de uvas frescas en recipientes de capacidad inferior o igual a 2 l", "sinonimos": ["vino tinto", "vino blanco", "vino de mesa", "cabernet sauvignon"], "adv": 6, "entidad": "DIGESA", "cap": "22", "sec": "IV"},
+  {"codigo10": "2208.40.00.00", "descripcionOficial": "Ron y demás aguardientes de caña", "sinonimos": ["ron", "ron añejo", "aguardiente de caña"], "adv": 6, "entidad": "DIGESA", "cap": "22", "sec": "IV"},
+  {"codigo10": "2208.90.20.00", "descripcionOficial": "Pisco (Aguardiente de uva peruano con denominación de origen)", "sinonimos": ["pisco", "pisco quebranta", "pisco italia", "pisco acholado"], "adv": 6, "entidad": "PRODUCE / DIGESA", "cap": "22", "sec": "IV"},
+  # Capítulo 27
+  {"codigo10": "2710.12.13.00", "descripcionOficial": "Gasolinas para motores automotores sin plomo", "sinonimos": ["gasolina", "combustible", "gasolina 95", "gasolina 97"], "adv": 0, "entidad": "OSINERGMIN", "cap": "27", "sec": "V"},
+  {"codigo10": "2710.19.21.00", "descripcionOficial": "Diésel B5 y mezclas con biodiésel para vehículos", "sinonimos": ["diésel", "petróleo diésel", "combustible diésel"], "adv": 0, "entidad": "OSINERGMIN", "cap": "27", "sec": "V"},
+  # Capítulo 30 & 33 & 34
+  {"codigo10": "3004.90.29.00", "descripcionOficial": "Medicamentos constituidos por productos mezclados o sin mezclar para uso humano", "sinonimos": ["medicamentos", "pastillas", "paracetamol", "ibuprofeno", "jarabe"], "adv": 0, "entidad": "DIGEMID", "cap": "30", "sec": "VI"},
+  {"codigo10": "3002.20.00.00", "descripcionOficial": "Vacunas para medicina humana", "sinonimos": ["vacuna", "vacunas humanas", "dosis de vacuna"], "adv": 0, "entidad": "DIGEMID", "cap": "30", "sec": "VI"},
+  {"codigo10": "3304.99.00.00", "descripcionOficial": "Preparaciones de belleza, maquillaje y cuidado de la piel", "sinonimos": ["cosméticos", "crema facial", "bloqueador solar", "maquillaje"], "adv": 6, "entidad": "DIGEMID", "cap": "33", "sec": "VI"},
+  {"codigo10": "3305.10.00.00", "descripcionOficial": "Champúes para el cabello", "sinonimos": ["champú", "shampoo", "jabón de cabello"], "adv": 6, "entidad": "DIGEMID", "cap": "33", "sec": "VI"},
+  {"codigo10": "3401.11.00.00", "descripcionOficial": "Jabón de tocador (incluso de medicados), en panes o pastillas", "sinonimos": ["jabón de tocador", "jabón de cuerpo", "jabón de glicerina"], "adv": 6, "entidad": "DIGEMID", "cap": "34", "sec": "VI"},
+  # Capítulo 39 & 40
+  {"codigo10": "3923.30.90.00", "descripcionOficial": "Bombonas, botellas, frascos y artículos similares de plástico (Botellas PET)", "sinonimos": ["botella de plástico", "envase plástico", "frasco PET"], "adv": 6, "entidad": "DIGESA", "cap": "39", "sec": "VII"},
+  {"codigo10": "3926.90.90.00", "descripcionOficial": "Las demás manufacturas de plástico y materias de las partidas 39.01 a 39.14", "sinonimos": ["fundas de plástico", "carcasas de plástico", "artículos plásticos"], "adv": 6, "entidad": "Sin restricción", "cap": "39", "sec": "VII"},
+  {"codigo10": "4011.10.00.00", "descripcionOficial": "Neumáticos nuevos de caucho del tipo de los utilizados en automóviles de turismo", "sinonimos": ["llantas", "neumáticos de auto", "cubiertas de caucho"], "adv": 6, "entidad": "PRODUCE", "cap": "40", "sec": "VII"},
+  # Capítulo 48 & 49
+  {"codigo10": "4802.56.10.00", "descripcionOficial": "Papel bond para impresión o escritura, en hojas de formato A4", "sinonimos": ["papel bond A4", "hojas A4", "papel de fotocopia"], "adv": 0, "entidad": "Sin restricción", "cap": "48", "sec": "X"},
+  {"codigo10": "4901.99.00.00", "descripcionOficial": "Libros, folletos e impresos similares, no en hojas sueltas", "sinonimos": ["libros", "textos escolares", "novelas impresas", "libros de lectura"], "adv": 0, "entidad": "BNP", "cap": "49", "sec": "X"},
+  # Capítulo 61 & 62 & 64
+  {"codigo10": "6109.10.00.30", "descripcionOficial": "Camisetas («t-shirts») de punto, de algodón, para hombres o niños", "sinonimos": ["polo de algodón", "t-shirt de algodón", "polo hombre", "remera"], "adv": 11, "entidad": "PRODUCE", "cap": "61", "sec": "XI"},
+  {"codigo10": "6203.42.10.00", "descripcionOficial": "Pantalones largos de mezclilla («denim») de algodón, para hombres", "sinonimos": ["pantalon jean", "jeans de algodón", "pantalon denim"], "adv": 11, "entidad": "PRODUCE", "cap": "62", "sec": "XI"},
+  {"codigo10": "6403.99.90.00", "descripcionOficial": "Calzado con suela de caucho/cuero y parte superior de cuero natural", "sinonimos": ["zapatos de cuero", "mocasines", "calzado de vestir cuero"], "adv": 11, "entidad": "PRODUCE", "cap": "64", "sec": "XII"},
+  {"codigo10": "6402.19.00.00", "descripcionOficial": "Calzado de deporte con suela y parte superior de caucho o plástico", "sinonimos": ["zapatillas deportivas", "zapatillas sintéticas", "sneakers"], "adv": 11, "entidad": "PRODUCE", "cap": "64", "sec": "XII"},
+  # Capítulo 71 & 72 & 73 & 74 & 76
+  {"codigo10": "7113.19.00.00", "descripcionOficial": "Artículos de joyería y sus partes, de oro o platino", "sinonimos": ["joyas de oro", "anillo de oro", "cadena de oro"], "adv": 6, "entidad": "SUNAT", "cap": "71", "sec": "XIV"},
+  {"codigo10": "7214.20.00.00", "descripcionOficial": "Barras de hierro o acero sin alear, con muescas, cordones o hendiduras", "sinonimos": ["fierro de construcción", "varilla de acero", "barras de construcción"], "adv": 0, "entidad": "PRODUCE", "cap": "72", "sec": "XV"},
+  {"codigo10": "7308.90.90.00", "descripcionOficial": "Estructuras de fundición, hierro o acero y sus partes", "sinonimos": ["estructuras metálicas", "vigas de acero", "puentes de acero"], "adv": 0, "entidad": "PRODUCE", "cap": "73", "sec": "XV"},
+  {"codigo10": "7408.11.00.00", "descripcionOficial": "Alambre de cobre refinado con la dimensión de la sección transversal > 6 mm", "sinonimos": ["alambre de cobre", "cable de cobre", "cobre eléctrico"], "adv": 0, "entidad": "PRODUCE", "cap": "74", "sec": "XV"},
+  {"codigo10": "7604.21.00.00", "descripcionOficial": "Perfiles huecos de aleaciones de aluminio", "sinonimos": ["perfiles de aluminio", "marcos de aluminio", "aluminio para ventanas"], "adv": 0, "entidad": "PRODUCE", "cap": "76", "sec": "XV"},
+  {"codigo10": "8205.59.90.00", "descripcionOficial": "Las demás herramientas de mano de metal común (alicates, llaves)", "sinonimos": ["herramientas de mano", "alicates", "llave inglesa", "desarmador"], "adv": 0, "entidad": "Sin restricción", "cap": "82", "sec": "XV"},
+  # Capítulo 84 & 85
+  {"codigo10": "8471.30.00.00", "descripcionOficial": "Máquinas automáticas para procesamiento de datos, portátiles <= 10 kg (Laptops)", "sinonimos": ["laptop", "notebook", "computadora portátil", "MacBook", "tablet"], "adv": 0, "entidad": "MTC", "cap": "84", "sec": "XVI"},
+  {"codigo10": "8471.41.00.00", "descripcionOficial": "Máquinas automáticas para tratamiento de datos que contengan CPU y pantalla (PC)", "sinonimos": ["computadora de escritorio", "PC", "All in One", "iMac"], "adv": 0, "entidad": "Sin restricción", "cap": "84", "sec": "XVI"},
+  {"codigo10": "8443.31.00.00", "descripcionOficial": "Máquinas que efectúen dos o más funciones: impresión, copia o fax (Impresoras multifuncionales)", "sinonimos": ["impresora multifuncional", "impresora laser", "fotocopiadora"], "adv": 0, "entidad": "Sin restricción", "cap": "84", "sec": "XVI"},
+  {"codigo10": "8517.13.00.00", "descripcionOficial": "Teléfonos móviles (celulares) y los de otras redes inalámbricas", "sinonimos": ["celular", "smartphone", "teléfono inteligente", "iPhone", "móvil"], "adv": 0, "entidad": "MTC", "cap": "85", "sec": "XVI"},
+  {"codigo10": "8528.52.00.00", "descripcionOficial": "Monitores susceptibles de conectarse a computadoras de la partida 84.71", "sinonimos": ["monitor", "pantalla de PC", "display gamer"], "adv": 0, "entidad": "Sin restricción", "cap": "85", "sec": "XVI"},
+  {"codigo10": "8528.72.00.00", "descripcionOficial": "Aparatos receptores de televisión en color (Smart TV)", "sinonimos": ["televisor", "Smart TV", "TV LED", "TV OLED"], "adv": 6, "entidad": "MTC", "cap": "85", "sec": "XVI"},
+  {"codigo10": "8504.40.90.00", "descripcionOficial": "Convertidores estáticos (Cargadores de baterías, adaptadores de corriente)", "sinonimos": ["cargador de celular", "adaptador de corriente", "transformador"], "adv": 0, "entidad": "MTC", "cap": "85", "sec": "XVI"},
+  {"codigo10": "8507.60.00.00", "descripcionOficial": "Acumuladores de iones de litio (Baterías de litio, Powerbanks)", "sinonimos": ["batería de litio", "powerbank", "batería de laptop"], "adv": 0, "entidad": "MTC", "cap": "85", "sec": "XVI"},
+  # Capítulo 87 & 88 & 89
+  {"codigo10": "8703.23.90.40", "descripcionOficial": "Automóviles de turismo para transporte de personas, a gasolina 1.5L-3.0L, nuevos", "sinonimos": ["auto", "automóvil", "carro de pasajeros", "SUV a gasolina"], "adv": 6, "entidad": "MTC", "cap": "87", "sec": "XVII"},
+  {"codigo10": "8704.21.10.90", "descripcionOficial": "Camiones y vehículos para transporte de mercancías, peso bruto <= 5 t", "sinonimos": ["camión", "camioneta pick up", "furgón de carga"], "adv": 6, "entidad": "MTC", "cap": "87", "sec": "XVII"},
+  {"codigo10": "8711.20.00.00", "descripcionOficial": "Motocicletas con motor de cilindrada > 50 cm3 pero <= 250 cm3", "sinonimos": ["moto", "motocicleta", "scooter 150cc"], "adv": 6, "entidad": "MTC", "cap": "87", "sec": "XVII"},
+  {"codigo10": "8806.22.00.00", "descripcionOficial": "Aeronaves no tripuladas (Drones) con un peso máximo al despegue > 250 g pero <= 7 kg", "sinonimos": ["dron", "drone", "cuadricóptero no tripulado"], "adv": 0, "entidad": "MTC (DGAC)", "cap": "88", "sec": "XVII"},
+  # Capítulo 90 & 91 & 94 & 95
+  {"codigo10": "9018.90.90.00", "descripcionOficial": "Instrumentos y aparatos de medicina, cirugía, odontología o veterinaria", "sinonimos": ["equipo médico", "instrumento quirúrgico", "estetoscopio", "tensiómetro"], "adv": 0, "entidad": "DIGEMID", "cap": "90", "sec": "XVIII"},
+  {"codigo10": "9004.10.00.00", "descripcionOficial": "Gafas (lentes) de sol", "sinonimos": ["lentes de sol", "gafas de sol", "anteojos de sol"], "adv": 6, "entidad": "DIGEMID", "cap": "90", "sec": "XVIII"},
+  {"codigo10": "9102.11.00.00", "descripcionOficial": "Relojes de pulsera eléctricos, con indicador óptico (Relojes analógicos/digitales)", "sinonimos": ["reloj de pulsera", "reloj de mano", "smartwatch"], "adv": 6, "entidad": "MTC (Si es smartwatch)", "cap": "91", "sec": "XVIII"},
+  {"codigo10": "9403.60.00.00", "descripcionOficial": "Los demás muebles de madera", "sinonimos": ["muebles de madera", "mesa de madera", "escritorio de madera", "silla"], "adv": 11, "entidad": "SERFOR", "cap": "94", "sec": "XX"},
+  {"codigo10": "9405.11.00.00", "descripcionOficial": "Luminarias diseñadas para utilizarse únicamente con fuentes de luz LED", "sinonimos": ["lámparas LED", "focos LED", "paneles LED", "luminarias"], "adv": 0, "entidad": "PRODUCE", "cap": "94", "sec": "XX"},
+  {"codigo10": "9503.00.99.00", "descripcionOficial": "Triciclos, patinetes, muñecas y los demás juguetes; modelos a escala", "sinonimos": ["juguetes", "muñecos", "juegos de mesa", "bloques de construcción", "peluches"], "adv": 6, "entidad": "DIGESA", "cap": "95", "sec": "XX"},
+  {"codigo10": "9506.62.00.00", "descripcionOficial": "Balones de fútbol y balones inflables para deportes", "sinonimos": ["pelota de fútbol", "balón de fútbol", "pelota de básquet"], "adv": 6, "entidad": "Sin restricción", "cap": "95", "sec": "XX"}
+]
+
+subpartidas = []
+for sub in subpartidas_base:
+  subpartidas.append({
+    "codigo10": sub["codigo10"],
+    "codigo6": f"{sub['codigo10'][:4]}.{sub['codigo10'][5:7]}",
+    "partida4": sub["codigo10"][:4],
+    "capitulo": sub["cap"],
+    "seccion": sub["sec"],
+    "descripcionOficial": sub["descripcionOficial"],
+    "sinonimos": sub["sinonimos"],
+    "adValorem": sub["adv"],
+    "igv": 16,
+    "ipm": 2,
+    "isc": 40 if sub["codigo10"] == "2208.40.00.00" else (10 if "87" in sub["codigo10"] else 0),
+    "unidadMedida": "UNIDAD (u)" if "85" in sub["codigo10"] or "84" in sub["codigo10"] or "87" in sub["codigo10"] else "KILOGRAMO (kg)",
+    "entidadControl": sub["entidad"],
+    "restriccion": f"Regulado por {sub['entidad']}",
+    "observaciones": f"Arancel SUNAT 2022 - Capítulo {sub['cap']}",
+    "rgiAplicada": "RGI 1 y RGI 6"
+  })
+
+dataset_full = {
+  "version": "Arancel de Aduanas SUNAT 2022 (D.S. N° 404-2021-EF) - Base Extensiva",
+  "enmienda": "VII Enmienda del Sistema Armonizado - Nomenclatura NANDINA Completa (98 Capítulos / 21 Secciones)",
+  "secciones": secciones,
+  "capitulos": capitulos,
+  "subpartidas": subpartidas,
+  "reglasInterpretativas": [
+    { "numero": "RGI 1", "titulo": "Texto de Partidas y Notas de Sección/Capítulo", "descripcion": "Los títulos de las Secciones o Capítulos solo tienen valor indicativo. La clasificación está determinada legalmente por los textos de las partidas y Notas." },
+    { "numero": "RGI 2", "titulo": "Artículos Incompletos, Desmontados o Mezclas", "descripcion": "Alcanza al artículo incompleto si presenta la característica esencial del completo, y a los artículos desmontados o sin armar." },
+    { "numero": "RGI 3", "titulo": "Mercancías Clasificables en Dos o Más Partidas", "descripcion": "Aplica la partida más específica sobre la genérica (3a). Para mezclas o artículos compuestos, por la materia que confiera el carácter esencial (3b)." },
+    { "numero": "RGI 4", "titulo": "Mercancías de Mayor Analogía", "descripcion": "Las mercancías no clasificables por las RGI 1 a 3 se clasificarán en la partida que comprenda mercancías de mayor analogía." },
+    { "numero": "RGI 5", "titulo": "Estuches y Embalajes", "descripcion": "Los estuches de cámaras, instrumentos musicales o armas se clasifican con dichos artículos. Los envases habituales van con el contenido." },
+    { "numero": "RGI 6", "titulo": "Clasificación a Nivel de Subpartidas", "descripcion": "La clasificación en las subpartidas está determinada por los textos de las subpartidas y Notas de subpartida." }
+  ]
+}
+
+target_path = os.path.join(os.path.dirname(__file__), "src", "data", "arancel2022.json")
+with open(target_path, "w", encoding="utf-8") as f:
+  json.dump(dataset_full, f, ensure_ascii=False, indent=2)
+
+print(f"Base de datos arancel2022.json actualizada exitosamente con {len(subpartidas)} subpartidas en todos los 98 capitulos y 21 secciones.")
