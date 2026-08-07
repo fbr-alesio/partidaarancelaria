@@ -1,4 +1,4 @@
-import { SearchEngine } from './searchEngine.js?v=2.2.0';
+import { SearchEngine } from './searchEngine.js?v=2.3.0';
 import { GuidedClassifier } from './guidedClassifier.js';
 import { CompanyResolver } from './companyResolver.js';
 import { TariffCalculator } from './calculator.js';

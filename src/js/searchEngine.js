@@ -785,17 +785,21 @@ export class SearchEngine {
       const code10 = String(item.codigo10 || '').replace(/\D/g, '');
       const code6 = String(item.codigo6 || '').replace(/\D/g, '');
       let score = 0;
+      const itemCap = item.capitulo || (item.codigo10 ? item.codigo10.substring(0, 2) : '');
+      const matchesCap = capitulo && Number.parseInt(itemCap, 10) === Number.parseInt(capitulo, 10);
+      const matchesSec = seccion && String(item.seccion).toUpperCase() === String(seccion).toUpperCase();
+
+      if (matchesCap || matchesSec) {
+        return { item, score: 1 };
+      }
+
       if (brandProfile) {
         const productIndex = brandProfile.products.findIndex(product => code10.startsWith(product.code));
         return { item, score: productIndex >= 0 ? 5000 - productIndex : 0 };
       }
       if (aliasRule && !aliasRule.codes.some(code => code10.startsWith(code))) return { item, score: 0 };
 
-      const itemCap = item.capitulo || (item.codigo10 ? item.codigo10.substring(0, 2) : '');
-      const matchesCap = capitulo && Number.parseInt(itemCap, 10) === Number.parseInt(capitulo, 10);
-      const matchesSec = seccion && String(item.seccion).toUpperCase() === String(seccion).toUpperCase();
-
-      if (!rawQuery || matchesCap || matchesSec) score = 1;
+      if (!rawQuery) score = 1;
       else if (isCodeQuery && queryDigits.length >= 2) {
         if (queryDigits.length >= 10) {
           if (code10 === queryDigits) score = 3000;
