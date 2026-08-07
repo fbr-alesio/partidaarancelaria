@@ -1,4 +1,4 @@
-import { SearchEngine } from './searchEngine.js?v=2.1.0';
+import { SearchEngine } from './searchEngine.js?v=2.2.0';
 import { GuidedClassifier } from './guidedClassifier.js';
 import { CompanyResolver } from './companyResolver.js';
 import { TariffCalculator } from './calculator.js';
@@ -129,30 +129,15 @@ function renderTree(filterText = '') {
   }).join('');
 
   // Event Listeners para expansión y selección
+  // Clic en Sección: Solo expande/contrae el acordeón del árbol (sin alterar la tabla principal)
   container.querySelectorAll('.sec-node').forEach(node => {
     node.addEventListener('click', () => {
       const child = container.querySelector(`#children-sec-${node.dataset.sec}`);
       if (child) child.classList.toggle('open');
-
-      container.querySelectorAll('.tree-node').forEach(n => n.classList.remove('active'));
-      node.classList.add('active');
-
-      state.activeSeccion = node.dataset.sec;
-      state.activeCapitulo = null;
-      state.relatedItem = null;
-      state.classificationHistory = [];
-      const searchInput = document.getElementById('main-search-input');
-      if (searchInput) searchInput.value = '';
-
-      const matches = state.searchEngine.search({ seccion: node.dataset.sec });
-      if (matches.length > 0) {
-        state.activeItem = matches[0];
-        updateActiveItemPanel(state.activeItem);
-      }
-      renderSearchResults();
     });
   });
 
+  // Clic en Capítulo: Desglosa TODAS las subpartidas del capítulo en la tabla principal central
   container.querySelectorAll('.cap-node').forEach(node => {
     node.addEventListener('click', (e) => {
       const child = container.querySelector(`#children-cap-${node.dataset.cap}`);
