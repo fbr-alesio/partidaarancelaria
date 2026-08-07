@@ -790,7 +790,12 @@ export class SearchEngine {
         return { item, score: productIndex >= 0 ? 5000 - productIndex : 0 };
       }
       if (aliasRule && !aliasRule.codes.some(code => code10.startsWith(code))) return { item, score: 0 };
-      if (!rawQuery) score = 1;
+
+      const itemCap = item.capitulo || (item.codigo10 ? item.codigo10.substring(0, 2) : '');
+      const matchesCap = capitulo && Number.parseInt(itemCap, 10) === Number.parseInt(capitulo, 10);
+      const matchesSec = seccion && String(item.seccion).toUpperCase() === String(seccion).toUpperCase();
+
+      if (!rawQuery || matchesCap || matchesSec) score = 1;
       else if (isCodeQuery && queryDigits.length >= 2) {
         if (queryDigits.length >= 10) {
           if (code10 === queryDigits) score = 3000;
@@ -834,8 +839,13 @@ export class SearchEngine {
       return { item, score };
     }).filter(result => result.score > 0);
 
-    if (seccion) results = results.filter(result => result.item.seccion === seccion);
-    if (capitulo) results = results.filter(result => Number.parseInt(result.item.capitulo, 10) === Number.parseInt(capitulo, 10));
+    if (seccion) results = results.filter(result => String(result.item.seccion).toUpperCase() === String(seccion).toUpperCase());
+    if (capitulo) {
+      results = results.filter(result => {
+        const itemCap = result.item.capitulo || (result.item.codigo10 ? result.item.codigo10.substring(0, 2) : '');
+        return Number.parseInt(itemCap, 10) === Number.parseInt(capitulo, 10);
+      });
+    }
     if (adValorem !== '' && !Number.isNaN(Number(adValorem))) results = results.filter(result => Number(result.item.adValorem) === Number(adValorem));
     if (entidad) {
       const target = this.normalizeText(entidad);

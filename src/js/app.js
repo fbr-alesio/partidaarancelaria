@@ -1,4 +1,4 @@
-import { SearchEngine } from './searchEngine.js';
+import { SearchEngine } from './searchEngine.js?v=2.1.0';
 import { GuidedClassifier } from './guidedClassifier.js';
 import { CompanyResolver } from './companyResolver.js';
 import { TariffCalculator } from './calculator.js';
@@ -362,15 +362,10 @@ function renderSearchResults() {
   const query = document.getElementById('main-search-input').value;
   const adValorem = document.getElementById('filter-advalorem').value;
 
-  if (query.trim()) {
-    state.activeCapitulo = null;
-    state.activeSeccion = null;
-  }
-
   let results = [];
-  if (!query.trim() && state.activeCapitulo) {
+  if (state.activeCapitulo) {
     results = state.searchEngine.search({ capitulo: state.activeCapitulo, adValorem });
-  } else if (!query.trim() && state.activeSeccion) {
+  } else if (state.activeSeccion) {
     results = state.searchEngine.search({ seccion: state.activeSeccion, adValorem });
   } else if (!query.trim() && state.relatedItem) {
     results = state.searchEngine.search({ adValorem }).filter(item => item.partida4 === state.relatedItem.partida4);
@@ -382,7 +377,7 @@ function renderSearchResults() {
   const btnShowAll = document.getElementById('btn-show-all-results');
   const aliasRule = query.trim() ? (state.searchEngine.getCommercialAlias(query) || {}) : {};
 
-  if (!query.trim() && state.activeCapitulo) {
+  if (state.activeCapitulo) {
     const capInfo = state.searchEngine.getCapituloInfo(state.activeCapitulo);
     const capTitle = capInfo ? capInfo.nombre : `Capítulo ${state.activeCapitulo}`;
     countText.innerHTML = `
@@ -392,7 +387,7 @@ function renderSearchResults() {
       <span>Mostrando ${results.length.toLocaleString()} ${results.length === 1 ? 'subpartida aduanera' : 'subpartidas aduaneras'} de este capítulo</span>
     `;
     btnShowAll.classList.remove('hidden');
-  } else if (!query.trim() && state.activeSeccion) {
+  } else if (state.activeSeccion) {
     countText.innerHTML = `
       <div style="display: block; width: 100%; margin-bottom: 6px; font-size: 12px; color: var(--accent-blue); background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue);">
         📁 <strong>Sección ${state.activeSeccion}:</strong> Navegación Jerárquica por Sección
