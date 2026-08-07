@@ -10,6 +10,8 @@ const state = {
   companyResolver: null,
   dataset: null,
   activeItem: null,
+  activeCapitulo: null,
+  activeSeccion: null,
   activeCenterTab: 'tab-general',
   relatedItem: null,
   classificationHistory: [],
@@ -96,21 +98,22 @@ function renderTree(filterText = '') {
 
     return `
       <div class="tree-section-group">
-        <div class="tree-node sec-node" data-sec="${sec.id}">
+        <div class="tree-node sec-node ${state.activeSeccion === sec.id ? 'active' : ''}" data-sec="${sec.id}">
           <span class="node-icon">📁</span>
           <span><strong>Sección ${sec.id}</strong> - ${sec.nombre.substring(0, 22)}...</span>
         </div>
-        <div class="tree-children ${filterText ? 'open' : ''}" id="children-sec-${sec.id}">
+        <div class="tree-children ${filterText || state.activeSeccion === sec.id ? 'open' : ''}" id="children-sec-${sec.id}">
           ${secCaps.map(cNum => {
             const capObj = capitulos[cNum] || { nombre: `Capítulo ${cNum}` };
             const capSubpartidas = subpartidas.filter(s => s.capitulo === cNum);
+            const isCapActive = state.activeCapitulo === cNum;
 
             return `
-              <div class="tree-node cap-node" data-cap="${cNum}">
+              <div class="tree-node cap-node ${isCapActive ? 'active' : ''}" data-cap="${cNum}">
                 <span class="node-icon">📂</span>
                 <span><strong>Cap. ${cNum}:</strong> ${capObj.nombre.substring(0, 20)}...</span>
               </div>
-              <div class="tree-children ${filterText ? 'open' : ''}" id="children-cap-${cNum}">
+              <div class="tree-children ${filterText || isCapActive ? 'open' : ''}" id="children-cap-${cNum}">
                 ${capSubpartidas.map(sub => `
                   <div class="tree-node sub-node ${state.activeItem && state.activeItem.codigo10 === sub.codigo10 ? 'active' : ''}" data-code="${sub.codigo10}">
                     <span class="node-icon">📄</span>
@@ -130,18 +133,53 @@ function renderTree(filterText = '') {
     node.addEventListener('click', () => {
       const child = container.querySelector(`#children-sec-${node.dataset.sec}`);
       if (child) child.classList.toggle('open');
+
+      container.querySelectorAll('.tree-node').forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+
+      state.activeSeccion = node.dataset.sec;
+      state.activeCapitulo = null;
+      state.relatedItem = null;
+      state.classificationHistory = [];
+      const searchInput = document.getElementById('main-search-input');
+      if (searchInput) searchInput.value = '';
+
+      const matches = state.searchEngine.search({ seccion: node.dataset.sec });
+      if (matches.length > 0) {
+        state.activeItem = matches[0];
+        updateActiveItemPanel(state.activeItem);
+      }
+      renderSearchResults();
     });
   });
 
   container.querySelectorAll('.cap-node').forEach(node => {
-    node.addEventListener('click', () => {
+    node.addEventListener('click', (e) => {
       const child = container.querySelector(`#children-cap-${node.dataset.cap}`);
       if (child) child.classList.toggle('open');
+
+      container.querySelectorAll('.tree-node').forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+
+      state.activeCapitulo = node.dataset.cap;
+      state.activeSeccion = null;
+      state.relatedItem = null;
+      state.classificationHistory = [];
+      const searchInput = document.getElementById('main-search-input');
+      if (searchInput) searchInput.value = '';
+
+      const matches = state.searchEngine.search({ capitulo: node.dataset.cap });
+      if (matches.length > 0) {
+        state.activeItem = matches[0];
+        updateActiveItemPanel(state.activeItem);
+      }
+      renderSearchResults();
     });
   });
 
   container.querySelectorAll('.sub-node').forEach(node => {
-    node.addEventListener('click', () => {
+    node.addEventListener('click', (e) => {
+      e.stopPropagation();
       container.querySelectorAll('.sub-node').forEach(n => n.classList.remove('active'));
       node.classList.add('active');
 
@@ -197,7 +235,12 @@ function initSearch() {
 
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      searchInput.value = '';
+      state.classificationHistory = [];
+      state.relatedItem = null;
+      btnClear.classList.add('hidden');
       autocompleteBox.classList.add('hidden');
+      renderSearchResults();
       searchInput.blur();
       return;
     }
@@ -319,21 +362,61 @@ function renderSearchResults() {
   const query = document.getElementById('main-search-input').value;
   const adValorem = document.getElementById('filter-advalorem').value;
 
-  let results = state.searchEngine.search({ query, adValorem });
-  if (!query.trim() && state.relatedItem) {
-    results = results.filter(item => item.partida4 === state.relatedItem.partida4);
+  if (query.trim()) {
+    state.activeCapitulo = null;
+    state.activeSeccion = null;
   }
+
+  let results = [];
+  if (!query.trim() && state.activeCapitulo) {
+    results = state.searchEngine.search({ capitulo: state.activeCapitulo, adValorem });
+  } else if (!query.trim() && state.activeSeccion) {
+    results = state.searchEngine.search({ seccion: state.activeSeccion, adValorem });
+  } else if (!query.trim() && state.relatedItem) {
+    results = state.searchEngine.search({ adValorem }).filter(item => item.partida4 === state.relatedItem.partida4);
+  } else {
+    results = state.searchEngine.search({ query, adValorem });
+  }
+
   const countText = document.getElementById('results-count-text');
   const btnShowAll = document.getElementById('btn-show-all-results');
-  if (!query.trim() && state.relatedItem) {
+  const aliasRule = query.trim() ? (state.searchEngine.getCommercialAlias(query) || {}) : {};
+
+  if (!query.trim() && state.activeCapitulo) {
+    const capInfo = state.searchEngine.getCapituloInfo(state.activeCapitulo);
+    const capTitle = capInfo ? capInfo.nombre : `Capítulo ${state.activeCapitulo}`;
+    countText.innerHTML = `
+      <div style="display: block; width: 100%; margin-bottom: 6px; font-size: 12px; color: var(--accent-blue); background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue);">
+        📂 <strong>Capítulo ${state.activeCapitulo}:</strong> ${capTitle}
+      </div>
+      <span>Mostrando ${results.length.toLocaleString()} ${results.length === 1 ? 'subpartida aduanera' : 'subpartidas aduaneras'} de este capítulo</span>
+    `;
+    btnShowAll.classList.remove('hidden');
+  } else if (!query.trim() && state.activeSeccion) {
+    countText.innerHTML = `
+      <div style="display: block; width: 100%; margin-bottom: 6px; font-size: 12px; color: var(--accent-blue); background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue);">
+        📁 <strong>Sección ${state.activeSeccion}:</strong> Navegación Jerárquica por Sección
+      </div>
+      <span>Mostrando ${results.length.toLocaleString()} ${results.length === 1 ? 'subpartida aduanera' : 'subpartidas aduaneras'} de esta sección</span>
+    `;
+    btnShowAll.classList.remove('hidden');
+  } else if (!query.trim() && state.relatedItem) {
     countText.textContent = `${results.length.toLocaleString()} subpartidas relacionadas de la partida ${state.relatedItem.partida4}`;
     btnShowAll.classList.remove('hidden');
+  } else if (aliasRule && aliasRule.officialTerm) {
+    countText.innerHTML = `
+      <div style="display: block; width: 100%; margin-bottom: 6px; font-size: 12px; color: var(--accent-blue); background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue);">
+        💡 <strong>Búsqueda Inteligente B2B:</strong> Mostrando resultados para término oficial SUNAT: <strong>${aliasRule.officialTerm}</strong> <span style="color: var(--text-muted);">(asociado a "${query}")</span>
+      </div>
+      <span>Mostrando ${results.length.toLocaleString()} ${results.length === 1 ? 'subpartida aduanera' : 'subpartidas aduaneras'}</span>
+    `;
+    btnShowAll.classList.add('hidden');
   } else {
     countText.textContent = `Mostrando ${results.length.toLocaleString()} ${results.length === 1 ? 'subpartida aduanera' : 'subpartidas aduaneras'}${query ? ` para "${query}"` : ''}`;
     btnShowAll.classList.add('hidden');
   }
+
   const guidance = document.getElementById('search-guidance');
-  const aliasRule = query.trim() ? (state.searchEngine.getCommercialAlias(query) || {}) : {};
   const classificationGuide = query.trim() ? state.searchEngine.getUniversalClassificationGuide(query, results) : null;
   if (classificationGuide) {
     guidance.innerHTML = `<strong>Orientación comercial:</strong> ${aliasRule.guidance}`;
@@ -412,6 +495,7 @@ function renderSearchResults() {
   tableBody.innerHTML = displayResults.map(item => {
     const isSelected = state.activeItem && state.activeItem.codigo10 === item.codigo10;
     const isFav = state.favorites.includes(item.codigo10);
+    const entityInfo = state.searchEngine.resolveEntity(item);
 
     return `
       <tr class="${isSelected ? 'active-row' : ''}" data-code="${item.codigo10}">
@@ -425,7 +509,8 @@ function renderSearchResults() {
           <span class="adv-badge adv-${item.adValorem}">${item.adValorem}%</span>
         </td>
         <td>
-          <span class="entity-chip-sm">${item.entidadControl}</span>
+          <span class="adv-pill ${entityInfo.badge_class}" style="font-size: 10px; padding: 2px 7px; white-space: nowrap;">${entityInfo.badge_icon} ${entityInfo.estado_regulacion}</span>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${entityInfo.entidad_siglas} · ${entityInfo.codigo_tramite_vuce}</div>
         </td>
         <td style="text-align: right;">
           <button class="btn-icon-action btn-copy-row" data-code="${item.codigo10}" title="Copiar Código">📋</button>
@@ -562,8 +647,14 @@ function updateActiveItemPanel(item) {
   const totalBase = 18 + parseFloat(item.adValorem) + parseFloat(item.isc || 0);
   document.getElementById('tech-total-rate').textContent = `${totalBase}% (CIF + Tributos)`;
 
-  document.getElementById('tech-entity-name').textContent = entityInfo.entidad;
-  document.getElementById('tech-restriction-desc').textContent = entityInfo.restriccion;
+  document.getElementById('tech-entity-name').innerHTML = `
+    <span class="adv-pill ${entityInfo.badge_class}" style="margin-right: 6px; font-size: 11px; padding: 2px 8px;">${entityInfo.badge_icon} ${entityInfo.estado_regulacion}</span>
+    <strong>${entityInfo.entidad_siglas}</strong> · ${entityInfo.codigo_tramite_vuce}
+  `;
+  document.getElementById('tech-restriction-desc').innerHTML = `
+    <strong style="color: var(--accent-blue);">📋 Documento Requerido:</strong> ${entityInfo.documento_requerido}<br>
+    <small style="color: var(--text-secondary); display: inline-block; margin-top: 5px; line-height: 1.4;">${entityInfo.restriccion}</small>
+  `;
 
   // Actualizar Módulo de Acuerdos Comerciales / TLCs dinámicamente
   renderTlcModule(item);
@@ -978,18 +1069,31 @@ function renderNotasLegalesTab(item = state.activeItem) {
   const notes = state.searchEngine.getLegalNotes(capId);
 
   container.innerHTML = `
-    <div style="padding: 16px; border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app); display: grid; gap: 12px;">
-      <h4 style="color: var(--accent-blue); font-size: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">${notes.capitulo}</h4>
-      
-      <div>
-        <strong style="color: var(--text-main); font-size: 12px;">📌 Nota de Sección (Vinculante):</strong>
-        <p style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${notes.notaSeccion}</p>
-      </div>
+    <div style="display: grid; gap: 10px;">
+      <details open style="border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app); padding: 14px;">
+        <summary style="font-weight: 700; color: var(--accent-blue); cursor: pointer; font-size: 14px; outline: none;">
+          📑 ${notes.capitulo} (Notas de Sección y Capítulo)
+        </summary>
+        <div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; display: grid; gap: 12px;">
+          <div>
+            <strong style="color: var(--text-main); font-size: 12px;">📌 Nota de Sección (Vinculante):</strong>
+            <p style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${notes.notaSeccion}</p>
+          </div>
+          <div style="padding: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px;">
+            <strong style="color: var(--accent-blue); font-size: 12px;">📜 Nota Explicativa de Capítulo:</strong>
+            <p style="margin-top: 4px; font-size: 12px; color: var(--text-main); line-height: 1.5;">${notes.notaCapitulo}</p>
+          </div>
+        </div>
+      </details>
 
-      <div style="padding: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px;">
-        <strong style="color: var(--accent-blue); font-size: 12px;">📑 Nota Explicativa de Capítulo:</strong>
-        <p style="margin-top: 4px; font-size: 12px; color: var(--text-main); line-height: 1.5;">${notes.notaCapitulo}</p>
-      </div>
+      <details style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-app); padding: 14px;">
+        <summary style="font-weight: 600; color: var(--text-main); cursor: pointer; font-size: 13px; outline: none;">
+          ⚖️ Criterios Generales de Exclusión del Capítulo ${capId}
+        </summary>
+        <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+          Se excluyen de este Capítulo las preparaciones o mercancías reguladas expresamente por Capítulos de farmacia (Cap. 30), armas/explosivos (Cap. 93) o artículos de recreación/deporte (Cap. 95).
+        </div>
+      </details>
     </div>
   `;
 }

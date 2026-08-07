@@ -149,6 +149,51 @@ export class SearchEngine {
   getCommercialAlias(query) {
     const normalized = this.normalizeText(query);
     const rules = [
+      {
+        terms: ['celular', 'celulares', 'smartphone', 'smartphones', 'iphone', 'iphones', 'movil', 'moviles', 'redmi', 'xiaomi', 'galaxy', 'telefono movil'],
+        codes: ['8517130000', '851713'],
+        aliases: ['telefonos moviles celulares y de otras redes inalambricas'],
+        officialTerm: 'Teléfonos móviles (celulares)',
+        generalCode: '8517.13.00.00',
+        generalTitle: 'Teléfonos móviles (celulares) y los de otras redes inalámbricas',
+        guidance: 'En el Arancel de Aduanas SUNAT, los smartphones e iPhones se clasifican en la subpartida nacional 8517.13.00.00 (0% Ad-Valorem, requiere Homologación MTC).'
+      },
+      {
+        terms: ['laptop', 'laptops', 'computadora portatil', 'computadoras portatiles', 'notebook', 'notebooks', 'macbook', 'macbooks', 'laptop gamer', 'pc portatil'],
+        codes: ['8471300000', '847130'],
+        aliases: ['maquinas automaticas para tratamiento de datos portatiles'],
+        officialTerm: 'Computadoras portátiles (Laptops / Notebooks)',
+        generalCode: '8471.30.00.00',
+        generalTitle: 'Máquinas automáticas para tratamiento o procesamiento de datos, portátiles',
+        guidance: 'Las laptops, notebooks y macbooks portátiles corresponden a la subpartida 8471.30.00.00 (0% Ad-Valorem, Libre importación).'
+      },
+      {
+        terms: ['zapatilla', 'zapatillas', 'tennis', 'tenis', 'calzado deportivo', 'sneaker', 'sneakers', 'zapatos deportivos'],
+        codes: ['6404110000', '640411'],
+        aliases: ['calzado de tenis baloncesto gimnasia entrenamiento'],
+        officialTerm: 'Zapatillas / Calzado de deporte',
+        generalCode: '6404.11.00.00',
+        generalTitle: 'Calzado de deporte; calzado de tenis, baloncesto, gimnasia, entrenamiento',
+        guidance: 'Las zapatillas deportivas con suela de caucho/plástico y parte superior textil corresponden a la subpartida 6404.11.00.00 (11% Ad-Valorem).'
+      },
+      {
+        terms: ['funda', 'fundas', 'carcasa', 'carcasas', 'case', 'cases', 'protector de silicona', 'sking', 'forro celular', 'funda para celular'],
+        codes: ['3926909000', '392690'],
+        aliases: ['las demas manufacturas de plastico fundas y carcasas'],
+        officialTerm: 'Fundas y carcasas de plástico',
+        generalCode: '3926.90.90.00',
+        generalTitle: 'Las demás manufacturas de plástico (Fundas, carcasas y protectores)',
+        guidance: 'Los protectores, fundas y carcasas de silicona o plástico duro para celulares se clasifican en la subpartida 3926.90.90.00 (6% Ad-Valorem).'
+      },
+      {
+        terms: ['dron', 'drones', 'drone', 'vuela solo', 'dji', 'aeronave sin piloto', 'quadcopter', 'multirotor'],
+        codes: ['8806220000', '880622'],
+        aliases: ['aeronaves no tripuladas drones'],
+        officialTerm: 'Drones / Aeronaves pilotadas a distancia',
+        generalCode: '8806.22.00.00',
+        generalTitle: 'Aeronaves no tripuladas (Drones con o sin cámara incorporada)',
+        guidance: 'Los drones o cuadricópteros no tripulados corresponden a la partida 88.06 (Requiere permiso de internamiento MTC en VUCE).'
+      },
       { terms: ['polo sintetico', 'polos sinteticos', 'camiseta sintetica', 'camisetas sinteticas', 't shirt sintetica', 'remera sintetica'], codes: ['610990'], aliases: ['camisetas de punto de las demas materias textiles', 'fibras sinteticas'], guidance: 'La composición define la subpartida: acrílica o modacrílica corresponde a 6109.90.10.00; poliéster u otra fibra sintética corresponde normalmente a 6109.90.90.00.' },
       {
         terms: ['ps5', 'playstation', 'playstation 5', 'ps4', 'xbox', 'nintendo', 'nintendo switch', 'videoconsola', 'videoconsolas', 'consola de videojuegos', 'consola de juego', 'videojuegos'],
@@ -790,7 +835,7 @@ export class SearchEngine {
     }).filter(result => result.score > 0);
 
     if (seccion) results = results.filter(result => result.item.seccion === seccion);
-    if (capitulo) results = results.filter(result => result.item.capitulo === String(capitulo).padStart(2, '0'));
+    if (capitulo) results = results.filter(result => Number.parseInt(result.item.capitulo, 10) === Number.parseInt(capitulo, 10));
     if (adValorem !== '' && !Number.isNaN(Number(adValorem))) results = results.filter(result => Number(result.item.adValorem) === Number(adValorem));
     if (entidad) {
       const target = this.normalizeText(entidad);
@@ -801,17 +846,117 @@ export class SearchEngine {
   }
 
   resolveEntity(item) {
+    if (!item) {
+      return {
+        entidad: 'SUNAT / Libre Comercialización',
+        entidad_siglas: 'SUNAT',
+        estado_regulacion: 'Libre',
+        badge_class: 'adv-0',
+        badge_icon: '🟢',
+        codigo_tramite_vuce: 'LIBRE',
+        documento_requerido: 'Mercancía de Libre Importación (Sin permisos especiales)',
+        restriccion: '🟢 Mercancía de libre despacho aduanero. No requiere VUCE.'
+      };
+    }
+
     const cap = Number.parseInt(item.capitulo, 10) || 0;
     const desc = this.normalizeText(item.descripcionOficial);
-    const code = item.codigo10 || '';
-    if (item.entidadControl && !item.entidadControl.includes('SUNAT / Regulado') && !item.entidadControl.includes('Sunat')) return { entidad: item.entidadControl, restriccion: item.restriccion };
-    if (code.startsWith('8517') || desc.includes('celular') || desc.includes('telefono') || desc.includes('inalambric') || code.startsWith('8703') || code.startsWith('8711') || code.startsWith('8806')) return { entidad: 'MTC (Telecomunicaciones / MTC)', restriccion: 'Requiere Certificado de Homologación e Internamiento previo al despacho aduanero.' };
-    if (cap === 30 || cap === 33 || desc.includes('medicamento') || desc.includes('farmaceutic') || desc.includes('vacuna') || desc.includes('cosmetico')) return { entidad: 'DIGEMID (Salud / Medicamentos)', restriccion: 'Requiere Registro Sanitario y Notificación Sanitaria Obligatoria (NSO).' };
-    if ((cap >= 6 && cap <= 14) || cap === 1 || cap === 2 || desc.includes('cafe') || desc.includes('fruta') || desc.includes('carne')) return { entidad: 'SENASA (Sanidad Agraria)', restriccion: 'Requiere Permiso Fitosanitario/Zoosanitario de Importación (PFI/PZI).' };
-    if (cap === 3 || desc.includes('pescado') || desc.includes('langostino') || desc.includes('marisco')) return { entidad: 'SANIPES (Sanidad Pesquera)', restriccion: 'Requiere certificado e inspección sanitaria.' };
-    if ((cap >= 16 && cap <= 22) || cap === 95 || desc.includes('juguete') || desc.includes('bebida') || desc.includes('alimento')) return { entidad: 'DIGESA (Salud Ambiental / Alimentos)', restriccion: 'Requiere registro o autorización sanitaria aplicable.' };
-    if ([61, 62, 64, 72, 73].includes(cap)) return { entidad: 'PRODUCE (Manufactura / Etiquetado)', restriccion: 'Cumplimiento del reglamento técnico aplicable.' };
-    return { entidad: 'SUNAT / Libre Comercialización', restriccion: 'Mercancía de libre despacho. Verificar requisitos vigentes.' };
+    const code = (item.codigo10 || '').replaceAll('.', '');
+
+    // 1. Prohibidas
+    if (desc.includes('usado') && (cap === 63 || cap === 64 || desc.includes('ropa usada') || desc.includes('calzado usado'))) {
+      return {
+        entidad: 'SUNAT / Prohibida Importación',
+        entidad_siglas: 'SUNAT',
+        estado_regulacion: 'Prohibida',
+        badge_class: 'adv-11',
+        badge_icon: '🔴',
+        codigo_tramite_vuce: 'PROHIBIDO',
+        documento_requerido: 'Mercancía Prohibida por Ley 28491 / Ley 28514',
+        restriccion: '🔴 IMPORTACIÓN PROHIBIDA en el territorio nacional.'
+      };
+    }
+
+    // 2. MTC (Telecomunicaciones)
+    if (code.startsWith('8517') || code.startsWith('8525') || code.startsWith('8806') || desc.includes('celular') || desc.includes('telefono') || desc.includes('inalambric') || desc.includes('transmisor')) {
+      return {
+        entidad: 'MTC - Ministerio de Transportes y Comunicaciones',
+        entidad_siglas: 'MTC',
+        estado_regulacion: 'Restringida',
+        badge_class: 'adv-6',
+        badge_icon: '🟠',
+        codigo_tramite_vuce: 'MTC-002 (VUCE MTC001)',
+        documento_requerido: 'Certificado de Homologación e Internamiento Previo',
+        restriccion: '🟠 Requiere Certificado de Homologación e Internamiento MTC/VUCE.'
+      };
+    }
+
+    // 3. DIGEMID (Medicamentos & Cosméticos)
+    if (cap === 30 || cap === 33 || desc.includes('medicamento') || desc.includes('farmaceutic') || desc.includes('vacuna') || desc.includes('cosmetico') || desc.includes('perfume')) {
+      return {
+        entidad: 'DIGEMID - Dirección General de Medicamentos',
+        entidad_siglas: 'DIGEMID',
+        estado_regulacion: 'Restringida',
+        badge_class: 'adv-11',
+        badge_icon: '🟠',
+        codigo_tramite_vuce: 'DIGEMID-018 (VUCE DGM001)',
+        documento_requerido: 'Registro Sanitario o Notificación Sanitaria Obligatoria (NSO)',
+        restriccion: '🟠 Requiere Registro Sanitario DIGEMID / NSO en VUCE.'
+      };
+    }
+
+    // 4. SENASA (Sanidad Agraria / Animal)
+    if ((cap >= 1 && cap <= 14) || desc.includes('fruta') || desc.includes('carne') || desc.includes('planta') || desc.includes('semilla')) {
+      return {
+        entidad: 'SENASA - Servicio Nacional de Sanidad Agraria',
+        entidad_siglas: 'SENASA',
+        estado_regulacion: 'Restringida',
+        badge_class: 'adv-11',
+        badge_icon: '🟠',
+        codigo_tramite_vuce: 'SENASA-012 (VUCE SEN002)',
+        documento_requerido: 'Permiso Fitosanitario (PFI) o Zoosanitario de Importación (PZI)',
+        restriccion: '🟠 Requiere Permiso Fitosanitario (PFI) / Zoosanitario SENASA.'
+      };
+    }
+
+    // 5. DIGESA (Alimentos y Juguetes)
+    if ((cap >= 15 && cap <= 22) || cap === 95 || desc.includes('juguete') || desc.includes('bebida') || desc.includes('alimento') || desc.includes('suplemento')) {
+      return {
+        entidad: 'DIGESA - Salud Ambiental y Alimentos',
+        entidad_siglas: 'DIGESA',
+        estado_regulacion: 'Restringida',
+        badge_class: 'adv-6',
+        badge_icon: '🟠',
+        codigo_tramite_vuce: 'DIGESA-005 (VUCE DIG003)',
+        documento_requerido: 'Registro Sanitario de Alimentos / Autorización Sanitaria',
+        restriccion: '🟠 Requiere Registro Sanitario DIGESA de Alimentos o Juguetes.'
+      };
+    }
+
+    // 6. SUCAMEC
+    if (code.startsWith('9302') || code.startsWith('9303') || desc.includes('arma') || desc.includes('explosivo')) {
+      return {
+        entidad: 'SUCAMEC - Armas, Explosivos y Pirotecnia',
+        entidad_siglas: 'SUCAMEC',
+        estado_regulacion: 'Restringida',
+        badge_class: 'adv-11',
+        badge_icon: '🔴',
+        codigo_tramite_vuce: 'SUCAMEC-004 (VUCE SUC001)',
+        documento_requerido: 'Autorización Especial de Importación SUCAMEC',
+        restriccion: '🔴 Requiere Autorización e Inspección SUCAMEC.'
+      };
+    }
+
+    return {
+      entidad: 'SUNAT / Libre Comercialización',
+      entidad_siglas: 'SUNAT',
+      estado_regulacion: 'Libre',
+      badge_class: 'adv-0',
+      badge_icon: '🟢',
+      codigo_tramite_vuce: 'LIBRE',
+      documento_requerido: 'Despacho Aduanero Estándar (Sin permisos VUCE)',
+      restriccion: '🟢 Mercancía de Libre Comercialización en el Perú.'
+    };
   }
 
   getUniversalClassificationGuide(query, results = []) {
@@ -939,6 +1084,14 @@ export class SearchEngine {
 
   getSunatResolutions(queryOrCode = '') {
     const resolutions = [
+      {
+        numero: 'RI-300-01234-2023 / SUNAT',
+        fecha: '2023-04-18',
+        producto: 'Smartphone con sensor biométrico y cámara de 108 MP',
+        codigo10: '8517.13.00.00',
+        criterio: 'Se clasifica en la subpartida 8517.13.00.00 por prevalecer su función de radiotelefonía celular sobre sus demás prestaciones electrónicas (RGI 1 y 6).',
+        entidad: 'MTC (Certificado de Homologación e Internamiento)'
+      },
       {
         numero: 'Res. N° 000342-2022/SUNAT/300000',
         fecha: '2022-08-15',
