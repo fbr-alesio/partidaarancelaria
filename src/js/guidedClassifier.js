@@ -138,12 +138,12 @@ export class GuidedClassifier {
         break;
 
       case "polo_algodon":
-        targetQuery = "6109.10.00.30";
+        targetQuery = "6109.10.00.00";
         rgiAnalisis = [
           "Nivel Capítulo (Cap. 61): RGI 1 — Prendas de vestir de tejido de punto.",
           "Nivel Partida (61.09): RGI 1 — Camisetas ('t-shirts') y camisetas de tirantes de punto.",
           "Nivel Subpartida (6109.10): RGI 6 — De algodón.",
-          "Nivel Nacional (6109.10.00.30): RGI 6 — Desagregación nacional para prendas de vestir."
+          "Nivel Nacional (6109.10.00.00): RGI 6 — Desagregación nacional para prendas de vestir."
         ];
         break;
 

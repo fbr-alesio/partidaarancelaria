@@ -38,12 +38,18 @@ async function initializeApp() {
     initSearch();
     initCenterTabs();
     initCalculatorModal();
+    initInPageCifCalculator();
     initComparatorModal();
     initReglas();
     initThemeToggle();
+    initEditableExchangeRate();
+    initCommandPalette();
     initCommandPaletteShortcut();
+    initGlossary();
+    initRecentSearches();
+    initShareableLink();
+    initEntityFilters();
     updateFavoritesBadge();
-    fetchSunatExchangeRate();
 
     // Renderizar Workbench inicial
     renderSearchResults();
@@ -231,7 +237,23 @@ function initSearch() {
   });
 
   selectAdValorem.addEventListener('change', () => {
+    const val = selectAdValorem.value;
+    document.querySelectorAll('.chip[data-rate-val]').forEach(c => {
+      c.classList.toggle('active', c.dataset.rateVal === val);
+    });
     renderSearchResults();
+  });
+
+  const chips = document.querySelectorAll('.chip[data-rate-val]');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      if (selectAdValorem) {
+        selectAdValorem.value = chip.dataset.rateVal;
+      }
+      renderSearchResults();
+    });
   });
 
   const btnShowAll = document.getElementById('btn-show-all-results');
@@ -249,6 +271,19 @@ function initSearch() {
 
 function initCenterTabs() {
   const tabs = document.querySelectorAll('.center-tab');
+  const savedTab = localStorage.getItem('arancel_active_tab');
+
+  if (savedTab) {
+    const tabToActivate = Array.from(tabs).find(t => t.dataset.centertab === savedTab);
+    if (tabToActivate) {
+      tabs.forEach(t => t.classList.remove('active'));
+      tabToActivate.classList.add('active');
+      document.querySelectorAll('.center-tab-content').forEach(c => c.classList.remove('active'));
+      const targetContent = document.getElementById(savedTab);
+      if (targetContent) targetContent.classList.add('active');
+    }
+  }
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const targetId = tab.dataset.centertab;
@@ -258,6 +293,7 @@ function initCenterTabs() {
       document.querySelectorAll('.center-tab-content').forEach(c => c.classList.remove('active'));
       const targetContent = document.getElementById(targetId);
       if (targetContent) targetContent.classList.add('active');
+      localStorage.setItem('arancel_active_tab', targetId);
     });
   });
 }
@@ -275,6 +311,8 @@ function highlightText(text, query) {
 function renderSearchResults() {
   const query = document.getElementById('main-search-input').value;
   const adValorem = document.getElementById('filter-advalorem').value;
+  const activeEntityChip = document.querySelector('.entity-chip.active[data-entity-val]');
+  const entityVal = activeEntityChip ? activeEntityChip.dataset.entityVal : '';
 
   let results = [];
   if (state.activeCapitulo) {
@@ -285,6 +323,14 @@ function renderSearchResults() {
     results = state.searchEngine.search({ adValorem }).filter(item => item.partida4 === state.relatedItem.partida4);
   } else {
     results = state.searchEngine.search({ query, adValorem });
+  }
+
+  if (entityVal) {
+    results = results.filter(item => {
+      const entityInfo = state.searchEngine.resolveEntity(item);
+      if (entityVal === 'LIBRE') return entityInfo.mercanciaRestringida !== 'Sí';
+      return entityInfo.entidad_siglas === entityVal;
+    });
   }
 
   const countText = document.getElementById('results-count-text');
@@ -548,7 +594,6 @@ function highlightAndExpandTreeItem(item) {
   const activeNode = container.querySelector(`.sub-node[data-code="${item.codigo10}"]`);
   if (activeNode) {
     activeNode.classList.add('active');
-    activeNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 }
 
@@ -556,7 +601,8 @@ function updateActiveItemPanel(item) {
   const actionableButtons = [
     document.getElementById('btn-copy-active-code'),
     document.getElementById('btn-export-pdf'),
-    document.getElementById('btn-send-calc')
+    document.getElementById('btn-cif-export-pdf'),
+    document.getElementById('btn-cif-export-excel')
   ].filter(Boolean);
   const tlcList = document.querySelector('.tlc-badges-list');
 
@@ -565,8 +611,8 @@ function updateActiveItemPanel(item) {
     document.getElementById('active-desc-display').textContent = 'Selecciona una subpartida para consultar su ficha';
     document.getElementById('active-breadcrumb-display').textContent = 'Sin selección activa';
     const advEl = document.getElementById('active-adv-display');
-    advEl.textContent = 'Ad-Valorem: —';
-    advEl.className = 'subheading-adv-badge';
+    advEl.textContent = '—';
+    advEl.className = 'pct';
     document.getElementById('tech-adv-val').textContent = '—';
     document.getElementById('tech-isc-val').textContent = '—';
     document.getElementById('tech-total-rate').textContent = '—';
@@ -586,8 +632,8 @@ function updateActiveItemPanel(item) {
   document.getElementById('active-desc-display').textContent = state.searchEngine.getDisplayDescription(item);
 
   const advEl = document.getElementById('active-adv-display');
-  advEl.textContent = `Ad-Valorem: ${item.adValorem}%`;
-  advEl.className = `subheading-adv-badge adv-${item.adValorem}`;
+  advEl.textContent = `${item.adValorem}%`;
+  advEl.className = 'pct';
 
   const capituloInfo = state.searchEngine.getCapituloInfo(item.capitulo);
   document.getElementById('active-breadcrumb-display').textContent = 
@@ -613,21 +659,73 @@ function updateActiveItemPanel(item) {
   renderResolucionesTab(item.codigo10);
   renderNotasLegalesTab(item);
   renderChecklistTab(item);
+  syncCalculatorWithActiveItem(item);
+  if (window.addRecentItemToHistory) window.addRecentItemToHistory(item);
 
-  document.getElementById('btn-copy-active-code').onclick = () => copyToClipboard(item.codigo10);
-  document.getElementById('btn-export-pdf').onclick = () => printSubheadingReport(item, entityInfo);
-  document.getElementById('btn-send-calc').onclick = () => {
-    const modal = document.getElementById('modal-calc');
-    modal.classList.remove('hidden');
-    const advSel = document.getElementById('calc-advalorem');
-    if (advSel) {
-      advSel.dataset.baseVal = String(item.adValorem);
-      advSel.dataset.activeCode = item.codigo10;
-    }
-    document.getElementById('calc-isc').value = item.isc || 0;
-    syncAdValoremWithTLC();
-    calculateAndRender();
-  };
+  // Mantener/regresar siempre al panel superior (Hero Card / Workbench) para la mejor experiencia de búsqueda
+  const topPanel = document.querySelector('.workbench') || document.getElementById('tab-general') || document.querySelector('header.topbar');
+  if (topPanel) {
+    topPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  const btnCopy = document.getElementById('btn-copy-active-code');
+  if (btnCopy) btnCopy.onclick = () => copyToClipboard(item.codigo10);
+
+  const btnExportPdf = document.getElementById('btn-export-pdf');
+  if (btnExportPdf) btnExportPdf.onclick = () => printSubheadingReport(item, entityInfo);
+
+  const btnFavHero = document.getElementById('btn-fav-hero');
+  if (btnFavHero) {
+    const isFav = state.favorites.includes(item.codigo10);
+    btnFavHero.textContent = isFav ? '⭐ Guardado' : '⭐ Guardar';
+    btnFavHero.onclick = () => {
+      toggleFavorite(item.codigo10);
+      const nowFav = state.favorites.includes(item.codigo10);
+      btnFavHero.textContent = nowFav ? '⭐ Guardado' : '⭐ Guardar';
+      renderSearchResults();
+    };
+  }
+
+  const btnCifPdf = document.getElementById('btn-cif-export-pdf');
+  if (btnCifPdf) btnCifPdf.onclick = () => printSubheadingReport(item, entityInfo);
+
+  const btnCifExcel = document.getElementById('btn-cif-export-excel');
+  if (btnCifExcel) {
+    btnCifExcel.onclick = () => {
+      if (!state.activeItem) return;
+      const activeEntity = state.searchEngine.resolveEntity(state.activeItem);
+      const fob = parseFloat(document.getElementById('inpage-fob')?.value.replace(/,/g, '')) || 1000;
+      const flete = parseFloat(document.getElementById('inpage-flete')?.value.replace(/,/g, '')) || 150;
+      const seguro = parseFloat(document.getElementById('inpage-seguro')?.value.replace(/,/g, '')) || 20;
+      const activeAdvOpt = document.querySelector('.rate-opt.selected[data-inpage-adv]');
+      const activeAdv = activeAdvOpt ? parseFloat(activeAdvOpt.dataset.inpageAdv) : (state.activeItem.adValorem || 0);
+      const iscPct = parseFloat(document.getElementById('inpage-isc')?.value) || 0;
+      const activePercOpt = document.querySelector('.rate-opt.selected[data-inpage-perc]');
+      const activePerc = activePercOpt ? parseFloat(activePercOpt.dataset.inpagePerc) : 3.5;
+      const btnCertYes = document.getElementById('inpage-cert-yes');
+      const isCertYes = btnCertYes ? btnCertYes.classList.contains('selected') : false;
+      const inpagePaisSelect = document.getElementById('inpage-pais');
+      const paisOrigen = inpagePaisSelect ? inpagePaisSelect.value : 'NMF';
+      const unidades = parseInt(document.getElementById('inpage-unidades')?.value, 10) || 1;
+      const tcVal = document.getElementById('sunat-tc-val')?.textContent || '3.750';
+      const tipoCambio = parseFloat(tcVal.replace(/[^\d.]/g, '')) || 3.75;
+      const margenPct = parseFloat(document.getElementById('inpage-margen')?.value) || 35;
+
+      const calcRes = TariffCalculator.calculate({
+        fob, flete, seguro,
+        adValoremPct: activeAdv,
+        iscPct,
+        percepcionPct: activePerc,
+        paisOrigen,
+        tlcVerificado: isCertYes,
+        unidades,
+        tipoCambio,
+        margenGananciaPct: margenPct
+      });
+
+      exportCalculatorToExcel(state.activeItem, activeEntity, calcRes);
+    };
+  }
 }
 
 function renderTlcModule(item) {
@@ -843,9 +941,10 @@ function exportCalculatorToExcel(item, entityInfo, res) {
   </body>
   </html>`;
 
-  const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const uri = 'data:application/vnd.ms-excel;base64,';
+  const base64 = (s) => window.btoa(unescape(encodeURIComponent(s)));
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
+  link.href = uri + base64(excelTemplate);
   link.download = fileName;
   document.body.appendChild(link);
   link.click();
@@ -1129,6 +1228,205 @@ function initCalculatorModal() {
   });
 }
 
+function initInPageCifCalculator() {
+  const btnTriggerModal = document.getElementById('btn-trigger-modal-calc');
+  if (btnTriggerModal) {
+    btnTriggerModal.onclick = () => {
+      const modal = document.getElementById('modal-calc');
+      if (modal) modal.classList.remove('hidden');
+    };
+  }
+
+  let activeAdv = 0;
+  let activePerc = 3.5;
+  let isCertYes = true;
+
+  const advOpts = document.querySelectorAll('.rate-opt[data-inpage-adv]');
+  advOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      advOpts.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      activeAdv = parseFloat(opt.dataset.inpageAdv) || 0;
+      recalculateInPage();
+    });
+  });
+
+  const percOpts = document.querySelectorAll('.rate-opt[data-inpage-perc]');
+  percOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      percOpts.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      activePerc = parseFloat(opt.dataset.inpagePerc) || 3.5;
+      recalculateInPage();
+    });
+  });
+
+  const btnCertYes = document.getElementById('inpage-cert-yes');
+  const btnCertNo = document.getElementById('inpage-cert-no');
+  const alertBanner = document.getElementById('inpage-cert-banner');
+
+  if (btnCertYes && btnCertNo) {
+    btnCertYes.addEventListener('click', () => {
+      btnCertYes.classList.add('selected');
+      btnCertNo.classList.remove('selected');
+      isCertYes = true;
+
+      // Al responder SÍ: cambiar automáticamente Ad-Valorem a 0%
+      activeAdv = 0;
+      advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === '0'));
+
+      if (alertBanner) {
+        alertBanner.className = 'alert-banner ok';
+        alertBanner.innerHTML = '✓ Desgrava el Ad&nbsp;Valorem a 0% por convenio verificado. Sin certificado, se aplicaría la tasa estándar (6% u 11%) más una alerta de penalización aduanera.';
+      }
+      recalculateInPage();
+    });
+
+    btnCertNo.addEventListener('click', () => {
+      btnCertNo.classList.add('selected');
+      btnCertYes.classList.remove('selected');
+      isCertYes = false;
+
+      // Al responder NO: restaurar automáticamente la tasa Ad-Valorem estándar (6% u 11%)
+      const baseRate = state.activeItem && state.activeItem.adValorem > 0 ? String(state.activeItem.adValorem) : '6';
+      activeAdv = parseFloat(baseRate);
+      advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === baseRate));
+
+      if (alertBanner) {
+        alertBanner.className = 'alert-banner';
+        alertBanner.innerHTML = '⚠️ <strong>ALERTA PENALIZACIÓN ADUANERA:</strong> Al declarar [ NO ] en certificado de origen, la SUNAT aplicará la tasa de arancel estándar a pesar del TLC.';
+      }
+      recalculateInPage();
+    });
+  }
+
+  const paisInput = document.getElementById('inpage-pais');
+  if (paisInput) {
+    paisInput.addEventListener('change', () => {
+      const hasTlc = paisInput.value !== 'NMF';
+      if (hasTlc && isCertYes) {
+        activeAdv = 0;
+        advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === '0'));
+      } else if (!hasTlc || !isCertYes) {
+        const baseRate = state.activeItem && state.activeItem.adValorem > 0 ? String(state.activeItem.adValorem) : '6';
+        activeAdv = parseFloat(baseRate);
+        advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === baseRate));
+      }
+      recalculateInPage();
+    });
+  }
+
+  const inputs = ['inpage-fob', 'inpage-flete', 'inpage-seguro', 'inpage-isc', 'inpage-unidades', 'inpage-tc', 'inpage-margen'];
+  inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', recalculateInPage);
+      el.addEventListener('change', recalculateInPage);
+    }
+  });
+
+  function recalculateInPage() {
+    const selectedAdvOpt = document.querySelector('.rate-opt.selected[data-inpage-adv]');
+    if (selectedAdvOpt) {
+      activeAdv = parseFloat(selectedAdvOpt.dataset.inpageAdv) || 0;
+    }
+
+    const fobStr = document.getElementById('inpage-fob')?.value || '4200';
+    const fob = parseFloat(fobStr.replace(/,/g, '')) || 0;
+    const fleteStr = document.getElementById('inpage-flete')?.value || '380';
+    const flete = parseFloat(fleteStr.replace(/,/g, '')) || 0;
+    const seguroStr = document.getElementById('inpage-seguro')?.value || '42';
+    const seguro = parseFloat(seguroStr.replace(/,/g, '')) || 0;
+    const iscPct = parseFloat(document.getElementById('inpage-isc')?.value) || 0;
+    const paisOrigen = document.getElementById('inpage-pais')?.value || 'CN';
+    const unidades = parseInt(document.getElementById('inpage-unidades')?.value) || 120;
+    const tipoCambio = parseFloat(document.getElementById('inpage-tc')?.value) || 3.75;
+    const margenPct = parseFloat(document.getElementById('inpage-margen')?.value) || 35;
+
+    const res = TariffCalculator.calculate({
+      fob, flete, seguro,
+      adValoremPct: activeAdv,
+      iscPct,
+      percepcionPct: activePerc,
+      paisOrigen,
+      tlcVerificado: isCertYes,
+      unidades,
+      tipoCambio,
+      margenGananciaPct: margenPct
+    });
+
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    setText('res-fob-val', `USD ${res.fob}`);
+    setText('res-flete-seg-val', `USD ${(parseFloat(res.flete) + parseFloat(res.seguro)).toFixed(2)}`);
+    setText('res-cif-val', `USD ${res.valorCIF}`);
+    const advLabelText = res.preferenciaAplicada
+      ? `Ad Valorem (${res.adValoremPct}% TLC)`
+      : `Ad Valorem (${res.adValoremPct}% NMF)`;
+    setText('res-adv-label', advLabelText);
+    setText('res-adv-val', `USD ${res.montoAdValorem}`);
+    setText('res-igv-ipm-val', `USD ${(parseFloat(res.montoIGV) + parseFloat(res.montoIPM)).toFixed(2)}`);
+    setText('res-isc-val', `USD ${res.montoISC}`);
+    setText('res-percepcion-label', `Percepción SUNAT (${res.percepcionPct}%)`);
+    setText('res-percepcion-val', `USD ${res.montoPercepcion}`);
+    setText('res-landed-total', `S/. ${res.costoTotalLandedPEN}`);
+    setText('res-unid-lbl', `${res.unidades}`);
+    setText('res-costo-unid', `S/. ${res.costoUnitarioPEN}`);
+    setText('res-venta-unid', `S/. ${res.precioVentaSugeridoPEN}`);
+
+    const costUnit = parseFloat(res.costoUnitarioPEN.replace(/,/g, '')) || 0;
+    const sellUnit = parseFloat(res.precioVentaSugeridoPEN.replace(/,/g, '')) || 0;
+    const utilUnitPEN = (sellUnit - costUnit).toFixed(2);
+    setText('res-util-unid', `S/. ${utilUnitPEN}`);
+  }
+
+  window.recalculateInPage = recalculateInPage;
+  recalculateInPage();
+}
+
+function syncCalculatorWithActiveItem(item) {
+  if (!item) return;
+
+  const btnCertYes = document.getElementById('inpage-cert-yes');
+  const isCertYes = btnCertYes ? btnCertYes.classList.contains('selected') : true;
+  const inpagePaisSelect = document.getElementById('inpage-pais');
+  const hasTlc = inpagePaisSelect ? inpagePaisSelect.value !== 'NMF' : true;
+
+  const baseAdv = typeof item.adValorem === 'number' ? item.adValorem : parseFloat(item.adValorem) || 0;
+  const targetAdv = (hasTlc && isCertYes) ? 0 : baseAdv;
+
+  const advOpts = document.querySelectorAll('.rate-opt[data-inpage-adv]');
+  advOpts.forEach(opt => {
+    const val = parseFloat(opt.dataset.inpageAdv) || 0;
+    if (val === targetAdv) {
+      opt.classList.add('selected');
+    } else {
+      opt.classList.remove('selected');
+    }
+  });
+
+  const iscInput = document.getElementById('inpage-isc');
+  if (iscInput) {
+    iscInput.value = item.isc || 0;
+  }
+
+  const modalAdvSelect = document.getElementById('calc-advalorem');
+  if (modalAdvSelect) {
+    modalAdvSelect.dataset.baseVal = String(baseAdv);
+    modalAdvSelect.dataset.activeCode = item.codigo10;
+    const certValInput = document.getElementById('calc-cert-origen-val');
+    const isModalCertYes = certValInput ? certValInput.value === 'true' : true;
+    modalAdvSelect.value = isModalCertYes ? "0" : String(baseAdv);
+  }
+
+  if (window.recalculateInPage) {
+    window.recalculateInPage();
+  }
+}
+
 function calculateAndRender() {
   const fob = parseFloat(document.getElementById('calc-fob').value) || 0;
   const flete = parseFloat(document.getElementById('calc-flete').value) || 0;
@@ -1341,6 +1639,18 @@ function initReglas() {
   renderResolucionesTab(state.activeItem ? state.activeItem.codigo10 : '');
   renderNotasLegalesTab(state.activeItem);
   initRgiWizard();
+
+  const radioOpts = document.querySelectorAll('.radio-opt[data-rgi-opt]');
+  radioOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      radioOpts.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      const factorSelect = document.getElementById('rgi-p2-factor');
+      if (factorSelect) {
+        factorSelect.value = opt.dataset.rgiOpt;
+      }
+    });
+  });
 }
 
 function initRgiWizard() {
@@ -1398,22 +1708,21 @@ function renderResolucionesTab(query = '') {
 
   const resolutions = state.searchEngine.getSunatResolutions(query || (state.activeItem ? state.activeItem.codigo10 : ''));
   if (!resolutions.length) {
-    container.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted);">Sin resoluciones específicas registradas para esta búsqueda.</div>`;
+    container.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px;">Sin resoluciones específicas registradas para esta búsqueda.</div>`;
     return;
   }
 
   container.innerHTML = resolutions.map(r => `
-    <div style="padding: 14px; border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--bg-app);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-        <span style="font-weight: 700; color: var(--accent-blue); font-size: 13px;">📜 ${r.numero}</span>
-        <span class="adv-pill adv-0" style="font-size: 10px;">${r.fecha}</span>
+    <div class="res-item">
+      <div class="res-num">${r.numero}</div>
+      <div class="res-body">
+        <div class="t">${r.producto}</div>
+        <div class="d">${r.criterio}</div>
+        <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--brass); font-weight: 600;">
+          Subpartida Asignada: ${r.codigo10}
+        </div>
       </div>
-      <div style="margin-top: 8px; font-weight: 700; color: var(--text-main); font-size: 13px;">${r.producto}</div>
-      <div style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${r.criterio}</div>
-      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-        <span style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-blue);">Subpartida Asignada: ${r.codigo10}</span>
-        <span style="color: var(--text-muted);">${r.entidad}</span>
-      </div>
+      <div class="res-tag">${r.entidad}</div>
     </div>
   `).join('');
 }
@@ -1426,31 +1735,26 @@ function renderNotasLegalesTab(item = state.activeItem) {
   const notes = state.searchEngine.getLegalNotes(capId);
 
   container.innerHTML = `
-    <div style="display: grid; gap: 10px;">
-      <details open style="border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app); padding: 14px;">
-        <summary style="font-weight: 700; color: var(--accent-blue); cursor: pointer; font-size: 14px; outline: none;">
-          📑 ${notes.capitulo} (Notas de Sección y Capítulo)
-        </summary>
-        <div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; display: grid; gap: 12px;">
-          <div>
-            <strong style="color: var(--text-main); font-size: 12px;">📌 Nota de Sección (Sistema Armonizado):</strong>
-            <p style="margin-top: 4px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${notes.notaSeccion}</p>
-          </div>
-          <div style="padding: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px;">
-            <strong style="color: var(--accent-blue); font-size: 12px;">📜 Nota Explicativa de Capítulo:</strong>
-            <p style="margin-top: 4px; font-size: 12px; color: var(--text-main); line-height: 1.5;">${notes.notaCapitulo}</p>
-          </div>
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-head">
+          <div><span class="k">Capítulo ${capId}</span><span class="t">${notes.capitulo} (Notas de Sección y Capítulo)</span></div>
+          <div class="acc-chev">︿</div>
         </div>
-      </details>
-
-      <details style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-app); padding: 14px;">
-        <summary style="font-weight: 600; color: var(--text-main); cursor: pointer; font-size: 13px; outline: none;">
-          ⚖️ Criterios Generales de Exclusión del Capítulo ${capId}
-        </summary>
-        <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+        <div class="acc-body">
+          <p style="margin-bottom: 8px;"><strong>📌 Nota de Sección (Sistema Armonizado):</strong> ${notes.notaSeccion}</p>
+          <p><strong>📜 Nota Explicativa de Capítulo:</strong> ${notes.notaCapitulo}</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-head">
+          <div><span class="k">Exclusiones</span><span class="t">Criterios Generales de Exclusión del Capítulo ${capId}</span></div>
+          <div class="acc-chev">＋</div>
+        </div>
+        <div class="acc-body">
           Se excluyen de este Capítulo las preparaciones o mercancías reguladas expresamente por Capítulos de farmacia (Cap. 30), armas/explosivos (Cap. 93) o artículos de recreación/deporte (Cap. 95).
         </div>
-      </details>
+      </div>
     </div>
   `;
 }
@@ -1461,8 +1765,8 @@ function renderDynamicRgiTab(item = state.activeItem) {
 
   if (!item) {
     container.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px;">
-        🔍 Selecciona o busca una subpartida en el workbench para consultar su <strong>Análisis Técnico RGI</strong>.
+      <div style="padding: 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--line); border-radius: var(--radius); font-family: var(--font-mono); font-size: 12px;">
+        🔍 Selecciona o busca una subpartida para consultar su <strong>Análisis Técnico RGI</strong>.
       </div>
     `;
     return;
@@ -1485,23 +1789,13 @@ function renderDynamicRgiTab(item = state.activeItem) {
   }
 
   container.innerHTML = `
-    <div style="padding: 16px; border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-        <div>
-          <span style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--accent-blue);">${code}</span>
-          <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-top: 2px;">${desc}</div>
-        </div>
-        <span class="status-badge status-orientative">Resultado Orientativo</span>
-      </div>
-
-      <div style="margin-top: 10px;">
-        <h4 style="color: var(--accent-blue); font-size: 13px; font-weight: 700;">⚖️ ${ruleTitle}</h4>
-        <p style="margin-top: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${rationaleText}</p>
-      </div>
-
-      <div style="margin-top: 12px; padding: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; font-size: 11px;">
-        <strong style="color: var(--text-muted); text-transform: uppercase;">Criterio Técnico:</strong>
-        <span style="color: var(--text-main); font-weight: 600; margin-left: 6px;">${decisionFactor}</span>
+    <div class="rgi-card" style="border-color: var(--brass);">
+      <div class="rgi-question">Análisis Técnico RGI para ${code}</div>
+      <div class="rgi-h">${ruleTitle}</div>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px;">${rationaleText}</p>
+      <div style="padding: 10px 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); font-size: 11px; font-family: var(--font-mono);">
+        <strong style="color: var(--text-faint); text-transform: uppercase;">Criterio Técnico:</strong>
+        <span style="color: var(--brass); font-weight: 600; margin-left: 6px;">${decisionFactor}</span>
       </div>
     </div>
   `;
@@ -1520,10 +1814,441 @@ function updateFavoritesBadge() {
   if (el) el.textContent = state.favorites.length;
 }
 
+function initDensityToggle() {
+  const table = document.querySelector('table.data');
+  if (table) table.classList.remove('density-compact');
+  localStorage.removeItem('arancel_density');
+}
+
+function initEditableExchangeRate() {
+  const badge = document.getElementById('sunat-tc-badge');
+  const valDisplay = document.getElementById('sunat-tc-val');
+  const modal = document.getElementById('modal-tc-edit');
+  const input = document.getElementById('tc-input-value');
+  const btnClose = document.getElementById('btn-close-tc-modal');
+  const btnSave = document.getElementById('btn-save-tc');
+  const btnReset = document.getElementById('btn-reset-tc');
+
+  let officialTC = 3.750;
+
+  fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat')
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.precioVenta) {
+        officialTC = parseFloat(data.precioVenta);
+        updateTCDisplays();
+      }
+    })
+    .catch(() => {
+      officialTC = 3.750;
+      updateTCDisplays();
+    });
+
+  function getEffectiveTC() {
+    const custom = localStorage.getItem('arancel_custom_tc');
+    if (custom && !isNaN(parseFloat(custom))) {
+      return parseFloat(custom);
+    }
+    return officialTC;
+  }
+
+  function updateTCDisplays() {
+    const custom = localStorage.getItem('arancel_custom_tc');
+    const effective = getEffectiveTC();
+
+    if (valDisplay) {
+      if (custom) {
+        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Personalizado por usuario">✎ (Manual)</span>`;
+      } else {
+        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Editar tipo de cambio">✎</span>`;
+      }
+    }
+
+    const inpageTcInput = document.getElementById('inpage-tc');
+    if (inpageTcInput) {
+      inpageTcInput.value = effective.toFixed(3);
+      inpageTcInput.dispatchEvent(new Event('input'));
+    }
+    const calcTcInput = document.getElementById('calc-tc');
+    if (calcTcInput) {
+      calcTcInput.value = effective.toFixed(3);
+    }
+  }
+
+  if (badge) {
+    badge.addEventListener('click', () => {
+      if (input) input.value = getEffectiveTC().toFixed(3);
+      if (modal) modal.classList.remove('hidden');
+    });
+  }
+
+  if (btnClose) btnClose.onclick = () => modal.classList.add('hidden');
+
+  if (btnSave) {
+    btnSave.onclick = () => {
+      const newVal = parseFloat(input.value);
+      if (!isNaN(newVal) && newVal > 0) {
+        localStorage.setItem('arancel_custom_tc', newVal.toString());
+        updateTCDisplays();
+        showToast(`T.C. actualizado a S/. ${newVal.toFixed(3)}`);
+      }
+      modal.classList.add('hidden');
+    };
+  }
+
+  if (btnReset) {
+    btnReset.onclick = () => {
+      localStorage.removeItem('arancel_custom_tc');
+      updateTCDisplays();
+      showToast(`T.C. restablecido a SUNAT oficial (S/. ${officialTC.toFixed(3)})`);
+      modal.classList.add('hidden');
+    };
+  }
+
+  updateTCDisplays();
+}
+
 function initThemeToggle() {
-  const btn = document.getElementById('btn-theme-toggle');
-  btn.addEventListener('click', () => {
-    document.body.classList.toggle('theme-dark');
-    document.body.classList.toggle('theme-light');
+  const btn = document.getElementById('btn-theme-toggle') || document.getElementById('modeToggle');
+
+  const savedTheme = localStorage.getItem('arancel_theme');
+  if (savedTheme === 'light') {
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light', 'light');
+    if (btn) btn.innerHTML = '☾ Oscuro';
+  } else {
+    document.body.classList.remove('theme-light', 'light');
+    document.body.classList.add('theme-dark');
+    if (btn) btn.innerHTML = '☀ Claro';
+  }
+
+  if (!btn) return;
+
+  const toggleTheme = () => {
+    const isDark = document.body.classList.contains('theme-dark') || (!document.body.classList.contains('theme-light') && !document.body.classList.contains('light'));
+    if (isDark) {
+      document.body.classList.remove('theme-dark');
+      document.body.classList.add('theme-light', 'light');
+      btn.innerHTML = '☾ Oscuro';
+      localStorage.setItem('arancel_theme', 'light');
+    } else {
+      document.body.classList.remove('theme-light', 'light');
+      document.body.classList.add('theme-dark');
+      btn.innerHTML = '☀ Claro';
+      localStorage.setItem('arancel_theme', 'dark');
+    }
+  };
+
+  btn.addEventListener('click', toggleTheme);
+  window.toggleTheme = toggleTheme;
+}
+
+function initCommandPalette() {
+  const modal = document.getElementById('modal-command-palette');
+  const paletteInput = document.getElementById('palette-search-input');
+  const paletteResults = document.getElementById('palette-results-list');
+  const btnClose = document.getElementById('btn-close-palette-modal');
+  const mainSearchInput = document.getElementById('main-search-input');
+
+  if (!modal || !paletteInput || !paletteResults) return;
+
+  let selectedIndex = 0;
+  let currentResults = [];
+
+  function openPalette(initialQuery = '') {
+    modal.classList.remove('hidden');
+    paletteInput.value = initialQuery || (mainSearchInput ? mainSearchInput.value : '');
+    paletteInput.focus();
+    paletteInput.select();
+    updatePaletteResults();
+  }
+
+  function closePalette() {
+    modal.classList.add('hidden');
+  }
+
+  if (mainSearchInput) {
+    mainSearchInput.addEventListener('focus', () => openPalette());
+    mainSearchInput.addEventListener('click', () => openPalette());
+  }
+
+  if (btnClose) btnClose.onclick = closePalette;
+
+  paletteInput.addEventListener('input', () => {
+    selectedIndex = 0;
+    updatePaletteResults();
+  });
+
+  paletteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closePalette();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (currentResults.length > 0) {
+        selectedIndex = (selectedIndex + 1) % currentResults.length;
+        renderPaletteSelection();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (currentResults.length > 0) {
+        selectedIndex = (selectedIndex - 1 + currentResults.length) % currentResults.length;
+        renderPaletteSelection();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentResults.length > 0 && currentResults[selectedIndex]) {
+        selectPaletteItem(currentResults[selectedIndex]);
+      }
+    }
+  });
+
+  function updatePaletteResults() {
+    const query = paletteInput.value.trim();
+    currentResults = state.searchEngine ? state.searchEngine.search({ query }).slice(0, 30) : [];
+
+    if (currentResults.length === 0) {
+      paletteResults.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 13px;">
+          🔍 No se encontraron coincidencias para "${query}". Intenta con otro término o código NANDINA.
+        </div>
+      `;
+      return;
+    }
+
+    paletteResults.innerHTML = currentResults.map((item, idx) => {
+      const entityInfo = state.searchEngine.resolveEntity(item);
+      const desc = state.searchEngine.getDisplayDescription(item);
+      return `
+        <div class="palette-item ${idx === selectedIndex ? 'selected' : ''}" data-idx="${idx}">
+          <span class="palette-code">${item.codigo10}</span>
+          <span class="palette-desc">${highlightText(desc, query)}</span>
+          <div class="palette-tags">
+            <span class="adv-badge adv-${item.adValorem}">${item.adValorem}%</span>
+            <span class="adv-pill ${entityInfo.badge_class}" style="font-size: 10px; padding: 2px 6px;">${entityInfo.badge_icon} ${entityInfo.estado_regulacion}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    paletteResults.querySelectorAll('.palette-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.dataset.idx);
+        if (currentResults[idx]) {
+          selectPaletteItem(currentResults[idx]);
+        }
+      });
+    });
+  }
+
+  function renderPaletteSelection() {
+    const items = paletteResults.querySelectorAll('.palette-item');
+    items.forEach((item, idx) => {
+      if (idx === selectedIndex) {
+        item.classList.add('selected');
+        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  }
+
+  function selectPaletteItem(item) {
+    if (!item) return;
+    state.activeItem = item;
+    if (mainSearchInput) mainSearchInput.value = item.codigo10;
+    updateActiveItemPanel(item);
+    renderSearchResults();
+    closePalette();
+
+    // Activar pestaña General y desplazarse suavemente al panel principal Workbench
+    const tabGeneral = document.querySelector('.stamp-tab[data-tab="tab-general"]');
+    if (tabGeneral) tabGeneral.click();
+
+    const heroCard = document.querySelector('.workbench') || document.getElementById('tab-general');
+    if (heroCard) {
+      heroCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  window.openCommandPalette = openPalette;
+}
+
+function initGlossary() {
+  const container = document.getElementById('glossary-list-container');
+  const filterInput = document.getElementById('glossary-search-input');
+  const countBadge = document.getElementById('glossary-count-badge');
+  if (!container || !filterInput) return;
+
+  const terms = [
+    // Incoterms 2020
+    { term: 'EXW', tag: 'Incoterm', desc: 'Ex Works (En fábrica). El comprador asume todos los costos y riesgos desde el almacén del vendedor en origen.' },
+    { term: 'FOB', tag: 'Incoterm', desc: 'Free On Board (Libre a bordo). El vendedor entrega la carga a bordo de la nave en el puerto de origen. Sin flete ni seguro.' },
+    { term: 'CFR', tag: 'Incoterm', desc: 'Cost & Freight (Costo y flete). El vendedor paga el flete marítimo hasta el puerto de destino, pero el riesgo se transfiere en embarque.' },
+    { term: 'CIF', tag: 'Incoterm', desc: 'Cost, Insurance & Freight. Valor en puerto peruano (FOB + Flete + Seguro). Base imponible para liquidación de tributos SUNAT.' },
+    { term: 'DAP', tag: 'Incoterm', desc: 'Delivered at Place (Entregado en lugar). El vendedor entrega la carga en el destino convenido antes del despacho de importación.' },
+    { term: 'DDP', tag: 'Incoterm', desc: 'Delivered Duty Paid (Entregado derechos pagados). El vendedor asume todos los gastos y tributos aduaneros hasta el almacén comprador.' },
+    { term: 'FCA', tag: 'Incoterm', desc: 'Free Carrier (Libre transportista). El vendedor entrega la mercancía al transportista designado por el comprador en origen.' },
+
+    // Documentos & Trámites Aduaneros SUNAT
+    { term: 'DAM / DUA', tag: 'Documento', desc: 'Declaración Aduanera de Mercancías. Documento oficial tramitado por Agente de Aduana para despachar el cargamento ante SUNAT.' },
+    { term: 'B/L', tag: 'Documento', desc: 'Bill of Lading. Conocimiento de embarque marítimo. Titulo valor que acredita la propiedad de la carga y contrato de transporte.' },
+    { term: 'AWB', tag: 'Documento', desc: 'Air Waybill. Guía aérea de transporte internacional. Ampara el contrato de transporte de mercancías enviadas por avión.' },
+    { term: 'Packing List', tag: 'Documento', desc: 'Lista de empaque. Desglose detallado del contenido, peso bruto, peso neto, marcas y número de bultos del lote.' },
+    { term: 'Factura Comercial', tag: 'Documento', desc: 'Commercial Invoice. Documento contable emitido por el exportador que especifica precio de venta, valores e Incoterm.' },
+    { term: 'Certificado de Origen', tag: 'Documento', desc: 'Documento oficial para acreditar procedencia y acogerse a la liberación arancelaria (0% Ad-Valorem por TLC).' },
+    { term: 'Manifiesto de Carga', tag: 'Documento', desc: 'Documento expedido por la aerolínea/naviera con la relación completa de todos los bultos a bordo del medio de transporte.' },
+    { term: 'Nota de Tarja', tag: 'Documento', desc: 'Certificado emitido al recibir la carga en almacén aduanero que valida la cantidad y estado físico de los bultos recibidos.' },
+
+    // Impuestos & Tributación de Importación SUNAT
+    { term: 'Ad-Valorem', tag: 'Tributo', desc: 'Arancel de importación (0%, 6% u 11%) cobrado por SUNAT sobre el Valor CIF según la subpartida NANDINA.' },
+    { term: 'IGV', tag: 'Tributo', desc: 'Impuesto General a las Ventas (15.5%) aplicado sobre la suma de (Valor CIF + Ad-Valorem + ISC).' },
+    { term: 'IPM', tag: 'Tributo', desc: 'Impuesto de Promoción Municipal (2.5%) aplicado sobre la misma base imponible del IGV (Suma IGV + IPM = 18%).' },
+    { term: 'ISC', tag: 'Tributo', desc: 'Impuesto Selectivo al Consumo. Grava productos suntuarios, vehículos, bebidas alcohólicas o combustibles.' },
+    { term: 'Percepción IGV', tag: 'Tributo', desc: 'Adelanto del IGV cobrado por SUNAT (3.5% para importadores habituales, 5% o 10% para nuevos o sin RUC activo).' },
+    { term: 'Derecho Antidumping', tag: 'Tributo', desc: 'Derecho de protección comercial aplicado a productos importados con precios discriminatorios que dañan la industria nacional.' },
+    { term: 'Tasa Despacho', tag: 'Tributo', desc: 'Tasa administrativa cobrada por SUNAT por el servicio de tramitación de la declaración de importación.' },
+
+    // Regulación VUCE & Entidades Controladoras
+    { term: 'VUCE', tag: 'Plataforma', desc: 'Ventanilla Única de Comercio Exterior. Portal electrónico del Estado para tramitar permisos de MTC, DIGESA, SENASA, etc.' },
+    { term: 'MTC', tag: 'Entidad', desc: 'Ministerio de Transportes. Exige Certificado de Homologación e Internamiento Previo para celulares, tablets y transmisores.' },
+    { term: 'DIGESA', tag: 'Entidad', desc: 'Dirección General de Salud Ambiental. Regula permisos sanitarios para alimentos procesados, bebidas, juguetes y útiles.' },
+    { term: 'DIGEMID', tag: 'Entidad', desc: 'Dirección General de Medicamentos. Exige Registro Sanitario (NSO) para cosméticos, fármacos y dispositivos médicos.' },
+    { term: 'SENASA', tag: 'Entidad', desc: 'Servicio Nacional de Sanidad Agraria. Otorga Permisos Fitosanitarios (PFI) o Zoosanitarios (PZI) para plantas y carnes.' },
+    { term: 'SANIPES', tag: 'Entidad', desc: 'Organismo Nacional de Sanidad Pesquera. Emite autorizaciones e inspecciones sanitarias para productos acuícolas y marinos.' },
+    { term: 'SUCAMEC', tag: 'Entidad', desc: 'Regula el internamiento de armas, municiones, pirotecnia, explosivos y sustancias químicas de uso controlado.' },
+
+    // Nomenclatura & Clasificación Legal
+    { term: 'NANDINA', tag: 'Nomenclatura', desc: 'Nomenclatura Arancelaria Común de los Países Miembros de la CAN basada en el Sistema Armonizado mundial.' },
+    { term: 'Subpartida Nacional', tag: 'Nomenclatura', desc: 'Código de 10 dígitos (ej. 8517.13.00.00) usado en Perú para determinar tributos exactos y permisos exigibles.' },
+    { term: 'RGI', tag: 'Nomenclatura', desc: 'Reglas Generales Interpretativas (RGI 1 a 6). Normas legales mundiales que determinan la clasificación arancelaria.' },
+    { term: 'Resolución Vinculante', tag: 'SUNAT', desc: 'Dictamen de clasificación arancelaria emitido por SUNAT de cumplimiento obligatorio para resolver dudas técnicas.' },
+    { term: 'Notas Legales', tag: 'Nomenclatura', desc: 'Textos jurídicos al inicio de Secciones y Capítulos del Arancel que delimitan qué productos se incluyen o excluyen.' },
+
+    // Logística & Operatividad de Despacho
+    { term: 'Levante Aduanero', tag: 'Trámite', desc: 'Autorización otorgada por SUNAT que permite al consignatario retirar y disponer legalmente de las mercancías.' },
+    { term: 'Canal de Control', tag: 'SUNAT', desc: 'Verde (Levante directo sin revisión), Naranja (Revisión documental) o Rojo (Reconocimiento físico obligatorio de carga).' },
+    { term: 'Depósito Temporal', tag: 'Almacén', desc: 'Local autorizado por SUNAT para ingresar y custodiar cargas internacionales mientras se tramita su despacho.' },
+    { term: 'Landed Cost', tag: 'Costo', desc: 'Costo total real del producto en almacén (FOB + Flete + Seguro + Tributos + Almacenaje + Agente de Aduana).' }
+  ];
+
+  function renderTerms(filter = '') {
+    const q = filter.trim().toLowerCase();
+    const filtered = terms.filter(t => t.term.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q));
+
+    if (countBadge) countBadge.textContent = filtered.length;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div style="font-size: 11px; color: var(--text-faint); padding: 12px; text-align: center; font-family: var(--font-mono);">Sin coincidencias para "${filter}"</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(t => `
+      <div class="glossary-card">
+        <div class="glossary-card-head">
+          <span class="glossary-card-term">${t.term}</span>
+          <span class="glossary-card-tag">${t.tag}</span>
+        </div>
+        <div class="glossary-card-desc">${t.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  filterInput.addEventListener('input', (e) => renderTerms(e.target.value));
+  renderTerms('');
+}
+
+function initRecentSearches() {
+  const wrap = document.getElementById('recent-searches-wrap');
+  const container = document.getElementById('recent-chips-container');
+  if (!wrap || !container) return;
+
+  function getRecents() {
+    try {
+      return JSON.parse(localStorage.getItem('arancel_recents') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function addRecent(item) {
+    if (!item || !item.codigo10) return;
+    let recents = getRecents().filter(c => c !== item.codigo10);
+    recents.unshift(item.codigo10);
+    recents = recents.slice(0, 2);
+    localStorage.setItem('arancel_recents', JSON.stringify(recents));
+    renderRecents();
+  }
+
+  function renderRecents() {
+    const recents = getRecents().slice(0, 2);
+    if (recents.length === 0) {
+      wrap.classList.add('hidden');
+      return;
+    }
+    wrap.classList.remove('hidden');
+    container.innerHTML = recents.map(code => `
+      <div class="recent-chip" data-code="${code}">${code}</div>
+    `).join('');
+
+    container.querySelectorAll('.recent-chip').forEach(el => {
+      el.addEventListener('click', () => {
+        const code = el.dataset.code;
+        const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+        if (target) {
+          state.activeItem = target;
+          const mainSearchInput = document.getElementById('main-search-input');
+          if (mainSearchInput) mainSearchInput.value = code;
+          updateActiveItemPanel(target);
+          renderSearchResults();
+        }
+      });
+    });
+  }
+
+  window.addRecentItemToHistory = addRecent;
+  renderRecents();
+}
+
+function initShareableLink() {
+  const btnShare = document.getElementById('btn-share-link');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const codeParam = urlParams.get('codigo') || urlParams.get('code');
+
+  if (codeParam && state.dataset && state.dataset.subpartidas) {
+    const match = state.dataset.subpartidas.find(s => s.codigo10 === codeParam || s.codigo10.replace(/\./g, '') === codeParam.replace(/\./g, ''));
+    if (match) {
+      state.activeItem = match;
+      const mainSearchInput = document.getElementById('main-search-input');
+      if (mainSearchInput) mainSearchInput.value = match.codigo10;
+    }
+  }
+
+  if (btnShare) {
+    btnShare.addEventListener('click', () => {
+      if (!state.activeItem) return;
+      const shareUrl = `${window.location.origin}${window.location.pathname}?codigo=${state.activeItem.codigo10}`;
+      history.pushState(null, '', `?codigo=${state.activeItem.codigo10}`);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToastNotification(`🔗 Enlace directo de la subpartida ${state.activeItem.codigo10} copiado al portapapeles`);
+        });
+      } else {
+        showToastNotification(`🔗 URL generada: ${shareUrl}`);
+      }
+    });
+  }
+}
+
+function initEntityFilters() {
+  const chips = document.querySelectorAll('.entity-chip[data-entity-val]');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderSearchResults();
+    });
   });
 }
+

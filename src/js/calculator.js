@@ -128,6 +128,7 @@ export class TariffCalculator {
       montoPercepcion: montoPercepcion.toFixed(2),
       totalTributosSUNAT: totalTributosSUNAT.toFixed(2),
       costoTotalLanded: costoTotalLandedUSD.toFixed(2),
+      costoTotalLandedPEN: (costoTotalLandedUSD * tipoCambio).toFixed(2),
       efectividadImpuestoPct: valorCIF > 0 ? ((totalTributosSUNAT / valorCIF) * 100).toFixed(1) : "0.0",
       unidades,
       tipoCambio: tipoCambio.toFixed(3),

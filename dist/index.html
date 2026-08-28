@@ -3,146 +3,200 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PartidaArancelaria | Clasificador Arancelario SUNAT & NANDINA 2022</title>
-  <meta name="description" content="Plataforma B2B oficial de consulta y clasificación de partidas arancelarias SUNAT / NANDINA 2022 en Perú. Buscador inteligente, tributos, VUCE y simulador CIF.">
-  <meta name="theme-color" content="#090d16">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PartidaArancelaria — Clasificador SUNAT & NANDINA 2022</title>
+  <meta name="description" content="Plataforma de consulta y clasificación de partidas arancelarias SUNAT / NANDINA 2022 en Perú. Buscador inteligente, tributos, VUCE y simulador CIF.">
+  <meta name="theme-color" content="#0B1420">
   <link rel="manifest" href="/assets/manifest-BAd90y_j.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-B0A4Y-rB.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CbBO28t_.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-DInZVSbQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-dADckl45.css">
 </head>
-<body class="theme-light">
+<body class="theme-dark">
 
-  <!-- Top Navigation Bar (Header B2B Enterprise) -->
-  <header class="enterprise-header">
-    <div class="header-inner">
-      <div class="brand-block">
-        <img src="/assets/logo-BxhFqkFs.jpg" alt="PartidaArancelaria Logo" class="brand-logo-img">
-        <div class="brand-titles">
-          <span class="brand-name">Partida<span class="accent">Arancelaria</span> <span class="badge-enterprise">B2B</span></span>
-          <span class="brand-sub">Clasificador Arancelario Inteligente para Perú</span>
-          <span class="brand-disclaimer-header">Herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.</span>
+  <!-- Banner de nota informativa -->
+  <div class="note-bar">
+    <div class="wrap note-inner">
+      <span><b>PartidaArancelaria</b> — Clasificador SUNAT & Nomenclatura NANDINA VII Enmienda 2022</span>
+      <span class="note-sub font-mono">Dataset oficial v2022.12.31 · 8,015 subpartidas</span>
+    </div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">PA</div>
+        <div>
+          <div class="brand-name">Partida<span class="accent-gold">Arancelaria</span></div>
+          <div class="brand-sub">Clasificador SUNAT · NANDINA 2022</div>
         </div>
       </div>
 
-      <!-- Command Palette / Buscador Global Prominente -->
-      <div class="global-search-container">
-        <div class="search-input-box">
+      <!-- Buscador Global -->
+      <div class="search-bar-wrap">
+        <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="text" id="main-search-input" placeholder="Describe tu producto, material, función, uso o escribe un código NANDINA..." autocomplete="off" spellcheck="false">
-          <kbd class="kbd-shortcut">Ctrl + K</kbd>
+          <input type="text" id="main-search-input" placeholder="Buscar por partida, descripción o palabra clave…" autocomplete="off" spellcheck="false">
+          <kbd id="kbd-shortcut">Ctrl K</kbd>
           <button id="btn-clear-search" class="btn-clear hidden">✕</button>
         </div>
         <div id="autocomplete-suggestions" class="autocomplete-dropdown hidden"></div>
       </div>
 
-      <!-- Herramientas & Acciones rápidas -->
-      <div class="header-actions">
-        <div id="sunat-tc-badge" class="sunat-tc-header-chip" title="Tipo de Cambio Oficial SUNAT/SBS actualizado diariamente para importaciones">
-          <span class="tc-dot">🟢</span>
-          <span>T.C. SUNAT: <strong id="sunat-tc-val">S/. 3.750</strong></span>
+      <!-- Meta info y botones de accion -->
+      <div class="topbar-meta">
+        <div id="recent-searches-wrap" class="recent-searches-box hidden">
+          <span style="color: var(--text-faint); white-space: nowrap;">🕒 Recientes:</span>
+          <div id="recent-chips-container" style="display: flex; gap: 4px; flex-wrap: nowrap;"></div>
+        </div>
+        <div id="sunat-tc-badge" class="tc-chip" title="Haz clic para personalizar el Tipo de Cambio SUNAT / SBS">
+          <span class="dot"></span>
+          <span class="tc-label">T.C. SUNAT</span>
+          <b id="sunat-tc-val">S/. 3.750</b>
+          <span class="tc-edit-icon" title="Editar Tipo de Cambio">✏️</span>
         </div>
         <button id="btn-favorites" class="btn-head-action" title="Guardados">
           ⭐ <span id="fav-count" class="fav-badge">0</span>
         </button>
-        <button id="btn-theme-toggle" class="btn-head-action" title="Cambiar Tema">
-          ☀️ Modo Claro
-        </button>
+        <div id="btn-theme-toggle" class="mode-toggle">☀ Claro</div>
       </div>
     </div>
   </header>
 
-  <!-- WORKBENCH TRIPARTITO (3 PANELES / SPLIT-VIEW WORKBENCH) -->
-  <div class="workbench-container">
+  <!-- WORKBENCH LAYOUT (3 COLUMNAS) -->
+  <div class="wrap layout workbench-container">
 
-    <!-- PANEL 1: IZQUIERDO - NAVEGADOR JERÁRQUICO / ÁRBOL NANDINA (20% ancho) -->
-    <aside class="panel-left-tree">
-      <div class="panel-header">
-        <span class="panel-title">🌳 Explorar Nomenclatura NANDINA</span>
+    <!-- RAIL IZQUIERDO: Árbol NANDINA y En esta ficha -->
+    <aside class="rail panel-left-tree">
+      <div class="rail-title">
+        <span>Nomenclatura NANDINA</span>
         <button id="btn-collapse-tree" class="btn-mini-icon" title="Contraer todo">📁</button>
       </div>
-      
+
       <div class="tree-search-filter">
-        <input type="text" id="tree-filter-input" placeholder="Filtrar secciones/capítulos..." class="form-control-xs">
+        <input type="text" id="tree-filter-input" placeholder="Filtrar secciones o capítulos…" class="form-control-xs">
       </div>
 
-      <div id="nandina-tree-container" class="tree-view-body">
+      <div id="nandina-tree-container" class="tree tree-view-body" style="margin-bottom: 30px;">
         <!-- Árbol Jerárquico renderizado dinámicamente -->
       </div>
     </aside>
 
-    <!-- PANEL 2: CENTRAL - VISTA DE DATOS Y RESULTADOS (55% ancho) -->
-    <main class="panel-center-main">
-      
-      <!-- Ficha de Selección / Detalle de Subpartida Activa -->
-      <div class="subheading-active-header">
-        <div class="subheading-badge-line">
-          <span class="subheading-code-tag" id="active-code-display">8517.13.00.00</span>
-          <button id="btn-copy-active-code" class="btn-copy-chip" title="Copiar código NANDINA">📋 Copiar Código</button>
-          <span class="subheading-adv-badge adv-0" id="active-adv-display">Ad-Valorem: 0%</span>
+    <!-- MAIN CENTRAL: Ficha Hero, Pestañas, Tablas y Contenido -->
+    <main class="main panel-center-main">
+
+      <!-- Hero: Classification Stamp Card -->
+      <div class="stamp-card subheading-active-header">
+        <div class="stamp-top">
+          <div>
+            <div class="stamp-code-row" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div class="stamp-code" id="active-code-display">8517.13.00.00</div>
+              <div class="hero-actions-bar" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button id="btn-copy-active-code" class="copy-chip" title="Copiar código NANDINA">📋 Copiar Código</button>
+                <button id="btn-export-pdf" class="copy-chip" title="Exportar reporte A4 PDF">📄 Exportar PDF</button>
+                <button id="btn-fav-hero" class="copy-chip" title="Guardar subpartida">⭐ Guardar</button>
+              </div>
+            </div>
+            <div class="stamp-title" id="active-desc-display">Teléfonos móviles (celulares) y los de otras redes inalámbricas</div>
+            <div class="breadcrumb" id="active-breadcrumb-display">
+              Sección <b>XVI</b> › Capítulo <b>85</b> › Partida <b>8517</b> › Subpartida <b>8517.13.00.00</b>
+            </div>
+          </div>
+          <div class="seal-badge" title="Tasa de Arancel Ad-Valorem">
+            <div class="pct" id="active-adv-display">0%</div>
+            <div class="lbl">Ad&nbsp;Valorem</div>
+            <span id="tech-adv-val" class="hidden">0%</span>
+          </div>
         </div>
-        <h2 class="subheading-title-display" id="active-desc-display">Teléfonos móviles (celulares) y los de otras redes inalámbricas</h2>
-        <div class="subheading-breadcrumb" id="active-breadcrumb-display">
-          Sección XVI > Capítulo 85 > Partida 8517 > Subpartida 8517.13.00.00
+
+        <!-- Pestañas Centrales -->
+        <nav class="stamp-tabs center-tabs-bar">
+          <a class="stamp-tab center-tab active" data-centertab="tab-general" href="#resultados">Resultados</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-rgi" href="#rgi">Análisis RGI</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-cif" href="#calculadora-cif" style="color:var(--brass); font-weight:600;">★ Calculadora CIF</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-resoluciones" href="#resoluciones">Resoluciones SUNAT</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-notas" href="#notas">Notas legales</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-historico" href="#correlativa">Correlativa 2017↔2022</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-vuce" href="#checklist">Checklist VUCE</a>
+          <a class="stamp-tab center-tab" data-centertab="tab-fuentes" href="#fuentes">Trazabilidad</a>
+        </nav>
+
+        <div class="stub">
+          <span>Dataset v2022.12.31 · 8,015 subpartidas · Nivel nacional 10 dígitos</span>
+          <span class="barcode">
+            <i style="height:18px"></i><i style="height:10px"></i><i style="height:16px"></i><i style="height:7px"></i><i style="height:14px"></i><i style="height:18px"></i><i style="height:9px"></i><i style="height:15px"></i>
+          </span>
         </div>
       </div>
 
-      <!-- Selector de Pestañas Centrales (Tabs Workbench) -->
-      <nav class="center-tabs-bar">
-        <button class="center-tab active" data-centertab="tab-general">
-          🎯 Clasificar (Resultados)
-        </button>
-        <button class="center-tab" data-centertab="tab-rgi">
-          ⚖️ Análisis RGI
-        </button>
-        <button class="center-tab" data-centertab="tab-resoluciones">
-          📜 Resoluciones SUNAT
-        </button>
-        <button class="center-tab" data-centertab="tab-notas">
-          📑 Notas Legales
-        </button>
-        <button class="center-tab" data-centertab="tab-historico">
-          📜 Correlativa & Enmiendas
-        </button>
-        <button class="center-tab" data-centertab="tab-vuce">
-          📋 Checklist Referencial
-        </button>
-        <button class="center-tab" data-centertab="tab-fuentes">
-          🏛️ Fuentes & Trazabilidad
-        </button>
-      </nav>
+      <!-- Fila Resumen de Tributos -->
+      <div class="tax-row" id="resultados">
+        <div class="tax-cell">
+          <div class="k">IGV Ley</div>
+          <div class="v">15.5%</div>
+        </div>
+        <div class="tax-cell">
+          <div class="k">IPM Ley</div>
+          <div class="v">2.5%</div>
+        </div>
+        <div class="tax-cell">
+          <div class="k">ISC</div>
+          <div class="v" id="tech-isc-val">0%</div>
+        </div>
+        <div class="tax-cell total">
+          <div class="k">Tasa Base (CIF + Ad.Val.)</div>
+          <div class="v" id="tech-total-rate">18%</div>
+        </div>
+      </div>
 
-      <!-- Pestaña Central 1: Tabla de Resultados / Subpartidas Relacionadas -->
-      <div id="tab-general" class="center-tab-content active">
-        <div class="table-results-toolbar">
-          <div class="results-context-summary">
-            <span id="results-count-text" class="results-count">Mostrando 8,015 subpartidas aduaneras</span>
+      <!-- TAB 1: RESULTADOS & SUBPARTIDAS RELACIONADAS -->
+      <div id="tab-general" class="center-tab-content active section-tab">
+        <div class="section-head">
+          <h2>Subpartidas relacionadas</h2>
+          <div class="desc">
+            <span id="results-count-text">8,015 registros en base · Arancel de Aduanas 2022</span>
             <button id="btn-show-all-results" class="btn-show-all-results hidden" type="button">↩ Ver listado completo</button>
           </div>
-          <div class="filter-mini-inline">
-            <select id="filter-advalorem" class="form-select-xs">
-              <option value="">Todas las tasas Ad-Valorem</option>
-              <option value="0">0% (Libre de arancel)</option>
-              <option value="6">6% (Tasa Estándar)</option>
-              <option value="11">11% (Protección Nacional)</option>
-            </select>
-          </div>
         </div>
+
+        <!-- Filter Chips Ad-Valorem -->
+        <div class="chip-row">
+          <div class="chip active" data-rate-val="">Todas las tasas</div>
+          <div class="chip" data-rate-val="0">0% Libre de arancel</div>
+          <div class="chip" data-rate-val="6">6% Tasa estándar</div>
+          <div class="chip" data-rate-val="11">11% Protección nacional</div>
+        </div>
+
+        <!-- Filter Chips Entidad Reguladora VUCE (Propuesta 4) -->
+        <div class="chip-row entity-filter-row" style="margin-top: -6px;">
+          <div class="chip entity-chip active" data-entity-val="">Todas las entidades VUCE</div>
+          <div class="chip entity-chip" data-entity-val="LIBRE">🟢 Libre comercialización</div>
+          <div class="chip entity-chip" data-entity-val="MTC">📱 MTC</div>
+          <div class="chip entity-chip" data-entity-val="DIGESA">🥗 DIGESA</div>
+          <div class="chip entity-chip" data-entity-val="SENASA">🌿 SENASA</div>
+          <div class="chip entity-chip" data-entity-val="DIGEMID">💊 DIGEMID</div>
+        </div>
+
+        <select id="filter-advalorem" class="form-select-xs hidden">
+          <option value="">Todas las tasas Ad-Valorem</option>
+          <option value="0">0% (Libre de arancel)</option>
+          <option value="6">6% (Tasa Estándar)</option>
+          <option value="11">11% (Protección Nacional)</option>
+        </select>
+
         <div id="search-guidance" class="search-guidance hidden" role="note"></div>
 
-        <div class="data-table-wrapper">
-          <table class="enterprise-table">
+        <div class="table-container">
+          <table class="data enterprise-table">
             <thead>
               <tr>
-                <th style="width: 140px;">Subpartida Nacional</th>
-                <th>Descripción Oficial SUNAT / NANDINA</th>
-                <th style="width: 100px; text-align: center;">Ad-Valorem</th>
-                <th style="width: 140px;">Entidad Reguladora</th>
-                <th style="width: 110px; text-align: right;">Acciones</th>
+                <th style="width: 150px;">Subpartida</th>
+                <th>Descripción oficial SUNAT</th>
+                <th style="width: 100px; text-align: center;">Ad&nbsp;Valorem</th>
+                <th style="width: 160px;">Entidad / VUCE</th>
+                <th style="width: 100px; text-align: right;">Acciones</th>
               </tr>
             </thead>
             <tbody id="table-body">
@@ -152,75 +206,263 @@
         </div>
       </div>
 
-      <!-- Pestaña Central 2: Reglas de Interpretación RGI -->
-      <div id="tab-rgi" class="center-tab-content">
-        <div class="rgi-panel-content card-inner-panel">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div>
-              <h3>⚖️ Reglas Generales Interpretativas (RGI) de la OMA & SUNAT</h3>
-              <p class="panel-subtitle">Principios jurídicos fundamentales para determinar la correcta clasificación arancelaria.</p>
+      <!-- TAB 2: REGLAS DE INTERPRETACIONAL RGI -->
+      <div id="tab-rgi" class="center-tab-content section-tab">
+        <div class="section-head" id="rgi">
+          <h2>Asistente RGI · Carácter esencial</h2>
+          <div class="desc">Diagnóstico paso a paso para mercancías compuestas, sets o mezclas.</div>
+        </div>
+
+        <div class="rgi-steps" style="margin-bottom:20px;">
+          <div class="rgi-step">
+            <div class="n">Paso 01</div>
+            <h3>Presentación comercial</h3>
+            <p>Producto único, o juego / set formado por dos o más componentes de materias distintas.</p>
+          </div>
+          <div class="rgi-step">
+            <div class="n">Paso 02 · Regla 3b</div>
+            <h3>Carácter esencial</h3>
+            <p>Función técnica principal, materia predominante o valor comercial del componente decisivo.</p>
+          </div>
+          <div class="rgi-step">
+            <div class="n">Paso 03 · Regla 3c</div>
+            <h3>Orden numérico</h3>
+            <p>Si 3b no dirime, se clasifica en la última subpartida por orden numérico entre las candidatas.</p>
+          </div>
+        </div>
+
+        <div class="rgi-card">
+          <div class="rgi-question">Paso 2 de 3 · Regla 3b</div>
+          <div class="rgi-h">¿Cuál componente otorga el carácter esencial del conjunto?</div>
+          <div class="radio-group">
+            <div class="radio-opt selected" data-rgi-opt="funcion">
+              <div class="radio-dot"></div>
+              <div>
+                <div class="t">Función técnica principal</div>
+                <div class="d">El componente que determina el uso predominante del producto.</div>
+              </div>
             </div>
-            <button id="btn-open-rgi-wizard" class="btn-compare-trigger" style="margin: 0; background: var(--accent-blue); color: #fff;">🧙‍♂️ Asistente RGI (Carácter Esencial)</button>
-          </div>
-          <div id="reglas-list-grid" class="rgi-grid-container"></div>
-        </div>
-      </div>
-
-      <!-- Pestaña Central 3: Criterios Vinculantes & Resoluciones SUNAT -->
-      <div id="tab-resoluciones" class="center-tab-content">
-        <div class="card-inner-panel">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <div>
-              <h3>📜 Criterios Vinculantes & Resoluciones Intendenciales SUNAT</h3>
-              <p class="panel-subtitle">Jurisprudencia arancelaria oficial dictada por la Intendencia Nacional de Desarrollo de Estrategia Aduanera.</p>
+            <div class="radio-opt" data-rgi-opt="materia">
+              <div class="radio-dot"></div>
+              <div>
+                <div class="t">Materia constitutiva predominante</div>
+                <div class="d">Mayor peso o superficie en caucho, plástico o metal.</div>
+              </div>
+            </div>
+            <div class="radio-opt" data-rgi-opt="valor">
+              <div class="radio-dot"></div>
+              <div>
+                <div class="t">Valor comercial</div>
+                <div class="d">Componente de mayor costo monetario dentro del conjunto.</div>
+              </div>
+            </div>
+            <div class="radio-opt" data-rgi-opt="iguales">
+              <div class="radio-dot"></div>
+              <div>
+                <div class="t">Ninguno / todos de igual importancia</div>
+                <div class="d">Componentes indivisibles — pasa a Regla 3c, orden numérico.</div>
+              </div>
             </div>
           </div>
-          <div id="sunat-resolutions-list" style="display: grid; gap: 12px;">
-            <!-- Resoluciones SUNAT renderizadas dinámicamente -->
+          <div id="btn-open-rgi-wizard" class="rgi-cta">⚖ Generar análisis técnico</div>
+          <p class="rgi-disclaimer">Este análisis constituye una herramienta técnico-orientativa de apoyo y no reemplaza una Resolución de Clasificación Arancelaria emitida por SUNAT.</p>
+        </div>
+
+        <div id="reglas-list-grid" class="rgi-grid-container" style="margin-top: 24px;"></div>
+      </div>
+
+      <!-- TAB 3: CALCULADORA CIF & RENTABILIDAD (SECCIÓN PRINCIPAL DE FICHA) -->
+      <div id="tab-cif" class="center-tab-content section-tab active-cif-tab">
+        <div class="section-head" id="calculadora-cif">
+          <h2>Calculadora CIF &amp; Liquidación SUNAT</h2>
+          <div class="desc">Tributos de importación, desgravación por TLC y precio de venta en soles.</div>
+        </div>
+
+        <div class="cif-section">
+          <div class="cif-eyebrow">★ Herramienta principal</div>
+
+          <div class="cif-grid">
+            <div class="cif-form">
+
+              <div class="cif-step">
+                <div class="cif-step-head">
+                  <div class="cif-step-num">1</div>
+                  <h3>Valor de embarque &amp; impuestos SUNAT</h3>
+                  <span>🚢 USD</span>
+                </div>
+                <div class="field-grid">
+                  <div class="field"><label>Valor FOB (USD)</label><input id="inpage-fob" value="4,200.00"></div>
+                  <div class="field"><label>Flete internacional (USD)</label><input id="inpage-flete" value="380.00"></div>
+                  <div class="field"><label>Seguro de transporte (USD)</label><input id="inpage-seguro" value="42.00"></div>
+                  <div class="field">
+                    <label>Arancel Ad&nbsp;Valorem</label>
+                    <div class="rate-select">
+                      <div class="rate-opt selected" data-inpage-adv="0">0%</div>
+                      <div class="rate-opt" data-inpage-adv="6">6%</div>
+                      <div class="rate-opt" data-inpage-adv="11">11%</div>
+                    </div>
+                  </div>
+                  <div class="field"><label>IGV (%)</label><input value="15.5" readonly style="color:var(--brass); font-weight:700;"></div>
+                  <div class="field"><label>IPM (%)</label><input value="2.5" readonly style="color:var(--brass); font-weight:700;"></div>
+                  <div class="field"><label>ISC (%)</label><input id="inpage-isc" value="0"></div>
+                  <div class="field">
+                    <label>Percepción IGV SUNAT</label>
+                    <div class="rate-select">
+                      <div class="rate-opt selected" data-inpage-perc="3.5">3.5%</div>
+                      <div class="rate-opt" data-inpage-perc="5.0">5.0%</div>
+                      <div class="rate-opt" data-inpage-perc="10.0">10.0%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cif-step">
+                <div class="cif-step-head">
+                  <div class="cif-step-num">2</div>
+                  <h3>TLC &amp; comercialización en soles</h3>
+                  <span>🌍 S/.</span>
+                </div>
+                <div class="field-grid" style="margin-bottom:16px;">
+                  <div class="field" style="grid-column:1/-1;">
+                    <label>Convenio internacional (país de origen)</label>
+                    <select id="inpage-pais">
+                      <option value="NMF" selected>Sin TLC / Arancel Base NMF (Tasa Estándar)</option>
+                      <option value="CN">🇨🇳 China — TLC Perú-China (0% Ad&nbsp;Valorem)</option>
+                      <option value="US">🇺🇸 EE.UU. — TLC Perú-EE.UU. (0% Ad&nbsp;Valorem)</option>
+                      <option value="EU">🇪🇺 Unión Europea — TLC Perú-UE (0% Ad&nbsp;Valorem)</option>
+                      <option value="CAN">🇨🇴 Comunidad Andina — CAN (0% Arancel)</option>
+                      <option value="MX">🇲🇽 México — Alianza del Pacífico (0% Ad&nbsp;Valorem)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field" style="margin-bottom:16px;">
+                  <label>¿Cuenta con certificado de origen emitido en origen?</label>
+                  <div class="toggle-pair">
+                    <div class="toggle-opt selected" id="inpage-cert-yes">SÍ</div>
+                    <div class="toggle-opt" id="inpage-cert-no">NO</div>
+                  </div>
+                </div>
+                <div class="alert-banner ok" id="inpage-cert-banner">✓ Desgrava el Ad&nbsp;Valorem a 0% por convenio verificado. Sin certificado, se aplicaría la tasa estándar (6% u 11%) más una alerta de penalización aduanera.</div>
+
+                <div class="field-grid" style="margin-top:18px;">
+                  <div class="field"><label>Unidades a importar</label><input id="inpage-unidades" value="120"></div>
+                  <div class="field"><label>Tipo de cambio (S/.)</label><input id="inpage-tc" value="3.750"></div>
+                  <div class="field" style="grid-column:1/-1;"><label>Margen de ganancia deseado (%)</label><input id="inpage-margen" value="35"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="cif-result-panel">
+              <div class="cif-group-label">Valor en aduana</div>
+              <div class="cif-line"><span>Valor FOB</span><b id="res-fob-val">USD 4,200.00</b></div>
+              <div class="cif-line"><span>Flete + seguro</span><b id="res-flete-seg-val">USD 422.00</b></div>
+              <div class="cif-line"><span>Valor CIF</span><b id="res-cif-val">USD 4,622.00</b></div>
+
+              <div class="cif-group-label">Tributos SUNAT</div>
+              <div class="cif-line"><span id="res-adv-label">Ad&nbsp;Valorem (0% TLC)</span><b id="res-adv-val">USD 0.00</b></div>
+              <div class="cif-line"><span>IGV + IPM (18%)</span><b id="res-igv-ipm-val">USD 831.96</b></div>
+              <div class="cif-line"><span>ISC</span><b id="res-isc-val">USD 0.00</b></div>
+              <div class="cif-line"><span id="res-percepcion-label">Percepción SUNAT (3.5%)</span><b id="res-percepcion-val">USD 161.77</b></div>
+
+              <div class="cif-line final">
+                <span>Costo total nacionalizado</span>
+                <b id="res-landed-total">S/. 21,467.30</b>
+              </div>
+
+              <div class="cif-group-label">Rentabilidad sugerida (<span id="res-unid-lbl">120</span> unid.)</div>
+              <div class="cif-unit-row">
+                <div class="cif-unit-cell"><div class="k">Costo unitario</div><div class="v" id="res-costo-unid">S/. 178.89</div></div>
+                <div class="cif-unit-cell"><div class="k">Venta sugerida</div><div class="v" id="res-venta-unid">S/. 241.50</div></div>
+                <div class="cif-unit-cell profit"><div class="k">Utilidad unitaria</div><div class="v" id="res-util-unid">S/. 62.61</div></div>
+              </div>
+
+              <!-- Botones de Exportación Contable (PDF & Excel) -->
+              <div class="cif-export-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+                <button id="btn-cif-export-pdf" class="btn-rail-action" style="flex: 1; padding: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 6px;">📄 Exportar PDF</button>
+                <button id="btn-cif-export-excel" class="btn-rail-action btn-gold" style="flex: 1; padding: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 6px;">📊 Exportar Excel</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Pestaña Central 4: Notas Legales de Capítulo y Sección -->
-      <div id="tab-notas" class="center-tab-content">
-        <div class="card-inner-panel">
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3>📑 Notas Legales de Sección y Capítulo (Sistema Armonizado)</h3>
-            <p class="panel-subtitle">Textos normativos de observancia obligatoria para definir el alcance exacto de partidas y mercancías compuestas.</p>
+      <!-- TAB 4: RESOLUCIONES SUNAT -->
+      <div id="tab-resoluciones" class="center-tab-content section-tab">
+        <div class="section-head" id="resoluciones">
+          <h2>Resoluciones vinculantes SUNAT</h2>
+          <div class="desc">Jurisprudencia arancelaria de la Intendencia Nacional de Desarrollo de Estrategia Aduanera.</div>
+        </div>
+
+        <div class="res-list" style="margin-bottom: 20px;">
+          <div class="res-item">
+            <div class="res-num">RI Nº 000123-2023</div>
+            <div class="res-body">
+              <div class="t">Clasificación de teléfonos móviles con doble función (SIM + datos IoT)</div>
+              <div class="d">Precisa el alcance de la subpartida 8517.13.00.00 frente a equipos híbridos de telecomunicaciones y transmisión de datos.</div>
+            </div>
+            <div class="res-tag">Sección XVI</div>
           </div>
-          <div id="legal-notes-container">
-            <!-- Notas legales renderizadas dinámicamente -->
+          <div class="res-item">
+            <div class="res-num">RI Nº 000098-2022</div>
+            <div class="res-body">
+              <div class="t">Criterio de carácter esencial en sets de accesorios para telefonía</div>
+              <div class="d">Aplica la Regla 3b para sets vendidos en un mismo empaque comercial con cargador y funda.</div>
+            </div>
+            <div class="res-tag">RGI 3b</div>
+          </div>
+          <div class="res-item">
+            <div class="res-num">RI Nº 000041-2022</div>
+            <div class="res-body">
+              <div class="t">Homologación MTC como condición previa al levante</div>
+              <div class="d">Establece que el certificado de homologación es exigible antes del despacho aduanero, no como subsanación posterior.</div>
+            </div>
+            <div class="res-tag">VUCE</div>
           </div>
         </div>
+
+        <div id="sunat-resolutions-list" style="display: grid; gap: 14px;"></div>
       </div>
 
-      <!-- Pestaña Central 3: Correlativa e Histórico -->
-      <div id="tab-historico" class="center-tab-content">
-        <div class="card-inner-panel">
-          <h3>📜 Tabla Correlativa & Histórico de Enmiendas (2017 vs 2022)</h3>
-          <p class="panel-subtitle">Comparativa entre la VI y VII Enmienda del Sistema Armonizado aplicadas en la Nomenclatura NANDINA.</p>
-          <table class="enterprise-table" style="margin-top: 15px;">
+      <!-- TAB 5: NOTAS LEGALES -->
+      <div id="tab-notas" class="center-tab-content section-tab">
+        <div class="section-head" id="notas">
+          <h2>Notas legales de sección y capítulo</h2>
+          <div class="desc">Textos normativos de observancia obligatoria del Sistema Armonizado.</div>
+        </div>
+        <div id="legal-notes-container"></div>
+      </div>
+
+      <!-- TAB 6: CORRELATIVA -->
+      <div id="tab-historico" class="center-tab-content section-tab">
+        <div class="section-head" id="correlativa">
+          <h2>Correlativa &amp; histórico de enmiendas</h2>
+          <div class="desc">Comparativa entre la VI y VII Enmienda del Sistema Armonizado en NANDINA.</div>
+        </div>
+        <div class="table-container">
+          <table class="data enterprise-table">
             <thead>
               <tr>
                 <th>Arancel 2017 (6 dígitos)</th>
-                <th>Arancel 2022 (7ma Enmienda)</th>
-                <th>Descripción / Observación de Cambio</th>
+                <th>Arancel 2022 (7ma enmienda)</th>
+                <th>Observación de cambio</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><code>8517.12.00.00</code></td>
-                <td><code style="color: var(--accent-blue);">8517.13.00.00</code></td>
-                <td>Creación de subpartida específica para Teléfonos Móviles / Smartphones.</td>
+                <td class="code">8517.12.00.00</td>
+                <td class="code" style="color:var(--brass); font-weight:700;">8517.13.00.00</td>
+                <td>Creación de subpartida específica para teléfonos móviles / smartphones.</td>
               </tr>
               <tr>
-                <td><code>8471.30.00.00</code></td>
-                <td><code>8471.30.00.00</code></td>
+                <td class="code">8471.30.00.00</td>
+                <td class="code">8471.30.00.00</td>
                 <td>Sin cambio. Máquinas automáticas para procesamiento de datos portátiles.</td>
               </tr>
               <tr>
-                <td><code>8528.59.00.00</code></td>
-                <td><code>8528.52.00.00</code></td>
+                <td class="code">8528.59.00.00</td>
+                <td class="code">8528.52.00.00</td>
                 <td>Desagregación de monitores para computadoras de la partida 84.71.</td>
               </tr>
             </tbody>
@@ -228,229 +470,160 @@
         </div>
       </div>
 
-      <!-- Pestaña Central 4: Checklist VUCE & Expediente de Importación -->
-      <div id="tab-vuce" class="center-tab-content">
-        <div class="card-inner-panel">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <h3>📋 Checklist VUCE & Expediente de Importación</h3>
-              <p class="panel-subtitle">Lista de control interactiva para validar el expediente antes del arribo de la nave.</p>
+      <!-- TAB 7: COMPARADOR -->
+      <div id="tab-comparador" class="center-tab-content section-tab">
+        <div class="section-head" id="comparador">
+          <h2>Comparador lado a lado</h2>
+          <div class="desc">Contrasta subpartidas dudosas antes de declarar ante SUNAT.</div>
+        </div>
+        <div class="modal-frame">
+          <span class="fake-tag">Herramienta Comparadora</span>
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Comparador de subpartidas dudosas</h3>
+              <p>Contrasta tributos, entidad reguladora y requisitos SUNAT / VUCE antes de declarar.</p>
             </div>
-            <div style="padding: 6px 12px; background: var(--accent-blue-bg); border: 1px solid var(--accent-blue); border-radius: 6px; color: var(--accent-blue); font-size: 11px; font-weight: 700;">
-              <span>Estado: Expediente al 50%</span>
+            <div class="compare-grid">
+              <div class="compare-col">
+                <div class="code">8517.13.00.00</div>
+                <div class="compare-row"><span class="k">Ad&nbsp;Valorem</span><span class="v">0%</span></div>
+                <div class="compare-row"><span class="k">Entidad reguladora</span><span class="v">MTC</span></div>
+                <div class="compare-row"><span class="k">Requisito clave</span><span class="v">Homologación previa</span></div>
+                <div class="compare-row"><span class="k">Tasa tributaria total</span><span class="v">18%</span></div>
+              </div>
+              <div class="compare-col">
+                <div class="code">8517.14.00.00</div>
+                <div class="compare-row"><span class="k">Ad&nbsp;Valorem</span><span class="v">6%</span></div>
+                <div class="compare-row"><span class="k">Entidad reguladora</span><span class="v">MTC</span></div>
+                <div class="compare-row"><span class="k">Requisito clave</span><span class="v">Homologación previa</span></div>
+                <div class="compare-row"><span class="k">Tasa tributaria total</span><span class="v">24%</span></div>
+              </div>
             </div>
-          </div>
-
-          <div style="margin-top: 14px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted);">
-              <span>Avance de Documentación Obligatoria</span>
-              <span>3 / 6 Documentos</span>
-            </div>
-            <div style="height: 6px; background: var(--bg-input); border-radius: 999px; overflow: hidden; margin-top: 4px; border: 1px solid var(--border-color);">
-              <div style="height: 100%; width: 50%; background: linear-gradient(90deg, #2563eb, #16a34a); border-radius: 999px;"></div>
-            </div>
-          </div>
-
-          <div class="vuce-checklist-container" style="margin-top: 16px; display: grid; gap: 10px;">
-            <label class="vuce-check-item">
-              <input type="checkbox" checked>
-              <span>
-                <strong>Bill of Lading / Conocimiento de Embarque (B/L)</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Documento de transporte internacional firmado emitido por la naviera o consolidada.</small>
-              </span>
-              <span class="adv-pill adv-0" style="margin-left: auto; white-space: nowrap;">Obligatorio</span>
-            </label>
-            <label class="vuce-check-item">
-              <input type="checkbox" checked>
-              <span>
-                <strong>Factura Comercial (Commercial Invoice)</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Factura del proveedor con Incoterm (FOB/CIF), descripciones comerciales e incoterms.</small>
-              </span>
-              <span class="adv-pill adv-0" style="margin-left: auto; white-space: nowrap;">Obligatorio</span>
-            </label>
-            <label class="vuce-check-item">
-              <input type="checkbox" checked>
-              <span>
-                <strong>Lista de Empaque (Packing List)</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Desglose de cajas, pesos neto/bruto y cubicaje total.</small>
-              </span>
-              <span class="adv-pill adv-0" style="margin-left: auto; white-space: nowrap;">Obligatorio</span>
-            </label>
-            <label class="vuce-check-item">
-              <input type="checkbox">
-              <span>
-                <strong>Certificado de Origen Acreditado (TLC)</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Requerido en caso de aplicar a liberación arancelaria (0% Ad-Valorem por TLC).</small>
-              </span>
-              <span class="adv-pill adv-6" style="margin-left: auto; white-space: nowrap;">Opcional TLC</span>
-            </label>
-            <label class="vuce-check-item">
-              <input type="checkbox">
-              <span>
-                <strong>Registro / Permiso VUCE (DIGESA, SENASA, MTC, DIGEMID)</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Permiso sanitario o registro de homologación previo según la entidad restringida.</small>
-              </span>
-              <span class="adv-pill adv-11" style="margin-left: auto; white-space: nowrap;">Según Producto</span>
-            </label>
-            <label class="vuce-check-item">
-              <input type="checkbox">
-              <span>
-                <strong>Declaración Jurada de Valor (DJV) & Voucher Bancario</strong>
-                <small style="display: block; color: var(--text-muted); margin-top: 2px;">Sustento de transferencia al exterior exigido por la SUNAT para determinar el valor en aduana.</small>
-              </span>
-              <span class="adv-pill adv-6" style="margin-left: auto; white-space: nowrap;">Aduanas</span>
-            </label>
           </div>
         </div>
       </div>
 
-      <!-- Pestaña Central 7: Fuentes Oficiales & Trazabilidad -->
-      <div id="tab-fuentes" class="center-tab-content">
-        <div class="card-inner-panel">
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
-            <h3>🏛️ Fuentes Oficiales & Trazabilidad de Datos</h3>
-            <p class="panel-subtitle">Transparencia sobre la base arancelaria, normas legales y enlaces a portales gubernamentales del Perú.</p>
+      <!-- TAB 8: CHECKLIST VUCE -->
+      <div id="tab-vuce" class="center-tab-content section-tab">
+        <div class="section-head" id="checklist">
+          <h2>Expediente VUCE</h2>
+          <div class="desc">Checklist referencial antes del arribo de la nave.</div>
+        </div>
+        <div class="checklist">
+          <div class="checklist-head">
+            <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">Estado del expediente</span>
+            <span style="font-family:var(--font-mono); font-size:12px; color:var(--brass);">3 / 6 documentos</span>
           </div>
+          <div class="progress-track"><div class="progress-fill"></div></div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 18px;">
-            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-hover);">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Base Arancelaria</span>
-              <div style="font-size: 14px; font-weight: 700; color: var(--accent-blue); margin-top: 4px;">Arancel de Aduanas 2022</div>
-              <small style="color: var(--text-secondary); display: block; margin-top: 2px;">D.S. N.º 404-2021-EF y modificatorias</small>
+          <div class="vuce-checklist-container">
+            <div class="check-item">
+              <div class="check-box done"></div>
+              <div><div class="t">Bill of Lading (B/L)</div><div class="d">Documento de transporte internacional emitido por la naviera.</div></div>
+              <div class="req-tag">Obligatorio</div>
             </div>
-            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-hover);">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Nomenclatura Base</span>
-              <div style="font-size: 14px; font-weight: 700; color: var(--accent-blue); margin-top: 4px;">NANDINA (VII Enmienda)</div>
-              <small style="color: var(--text-secondary); display: block; margin-top: 2px;">Comunidad Andina / OMA</small>
+            <div class="check-item">
+              <div class="check-box done"></div>
+              <div><div class="t">Factura comercial</div><div class="d">Con Incoterm (FOB/CIF) y descripción comercial del proveedor.</div></div>
+              <div class="req-tag">Obligatorio</div>
             </div>
-            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-hover);">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Registros en Base</span>
-              <div style="font-size: 14px; font-weight: 700; color: var(--accent-blue); margin-top: 4px;">8,015 Subpartidas</div>
-              <small style="color: var(--text-secondary); display: block; margin-top: 2px;">Nivel Nacional de 10 dígitos</small>
+            <div class="check-item">
+              <div class="check-box"></div>
+              <div><div class="t">Certificado de origen (TLC)</div><div class="d">Requerido para desgravación arancelaria por tratado.</div></div>
+              <div class="req-tag">Opcional TLC</div>
             </div>
-            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-hover);">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Versión del Dataset</span>
-              <div style="font-size: 14px; font-weight: 700; color: var(--accent-blue); margin-top: 4px;">v2022.12.31</div>
-              <small style="color: var(--text-secondary); display: block; margin-top: 2px;">Verificación continua</small>
+            <div class="check-item">
+              <div class="check-box"></div>
+              <div><div class="t">Registro / permiso VUCE</div><div class="d">DIGESA, SENASA, MTC o DIGEMID según producto restringido.</div></div>
+              <div class="req-tag">Según producto</div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <h4 style="margin-bottom: 10px; color: var(--text-main);">🌐 Portales Oficiales del Estado Peruano</h4>
-          <div style="display: grid; gap: 8px;">
-            <a href="https://www.sunat.gob.pe/operatividadaduanera/" target="_blank" rel="noopener" style="padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); text-decoration: none; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;">
-              <span><strong>SUNAT - Operatividad Aduanera:</strong> Consulta de Arancel y Partidas</span>
-              <span style="color: var(--accent-blue); font-weight: 700;">Ir a SUNAT ↗</span>
-            </a>
-            <a href="https://www.vuce.gob.pe/" target="_blank" rel="noopener" style="padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); text-decoration: none; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;">
-              <span><strong>VUCE - Ventanilla Única de Comercio Exterior:</strong> Trámites y Mercancías Restringidas</span>
-              <span style="color: var(--accent-blue); font-weight: 700;">Ir a VUCE ↗</span>
-            </a>
-            <a href="https://www.acuerdoscomerciales.gob.pe/" target="_blank" rel="noopener" style="padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); text-decoration: none; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;">
-              <span><strong>MINCETUR - Acuerdos Comerciales del Perú:</strong> Tratados TLC y Reglas de Origen</span>
-              <span style="color: var(--accent-blue); font-weight: 700;">Ir a MINCETUR ↗</span>
-            </a>
-            <a href="https://www.comunidadandina.org/" target="_blank" rel="noopener" style="padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); text-decoration: none; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;">
-              <span><strong>CAN - Comunidad Andina:</strong> Nomenclatura Común NANDINA</span>
-              <span style="color: var(--accent-blue); font-weight: 700;">Ir a CAN ↗</span>
-            </a>
-          </div>
+      <!-- TAB 9: TRAZABILIDAD Y FUENTES -->
+      <div id="tab-fuentes" class="center-tab-content section-tab">
+        <div class="section-head" id="fuentes">
+          <h2>Fuentes Oficiales & Trazabilidad</h2>
+          <div class="desc">Base arancelaria y portales gubernamentales del Perú.</div>
+        </div>
+        <div class="sources">
+          <div class="source-cell"><div class="k">Base arancelaria</div><div class="v">Arancel 2022</div><div class="s">D.S. N.º 404-2021-EF</div></div>
+          <div class="source-cell"><div class="k">Nomenclatura</div><div class="v">NANDINA VII</div><div class="s">Comunidad Andina / OMA</div></div>
+          <div class="source-cell"><div class="k">Registros</div><div class="v">8,015 subpartidas</div><div class="s">Nivel nacional, 10 dígitos</div></div>
+          <div class="source-cell"><div class="k">Dataset</div><div class="v">v2022.12.31</div><div class="s">Verificación continua</div></div>
+        </div>
+
+        <div class="link-list">
+          <a class="link-row" href="https://www.sunat.gob.pe/operatividadaduanera/" target="_blank" rel="noopener">
+            <div><div class="t">SUNAT — Operatividad Aduanera</div><div class="s">Consulta de arancel y partidas</div></div>
+            <span class="arrow">↗</span>
+          </a>
+          <a class="link-row" href="https://www.vuce.gob.pe/" target="_blank" rel="noopener">
+            <div><div class="t">VUCE — Ventanilla Única de Comercio Exterior</div><div class="s">Trámites y mercancías restringidas</div></div>
+            <span class="arrow">↗</span>
+          </a>
+          <a class="link-row" href="https://www.acuerdoscomerciales.gob.pe/" target="_blank" rel="noopener">
+            <div><div class="t">MINCETUR — Acuerdos Comerciales del Perú</div><div class="s">Tratados TLC y reglas de origen</div></div>
+            <span class="arrow">↗</span>
+          </a>
+          <a class="link-row" href="https://www.comunidadandina.org/" target="_blank" rel="noopener">
+            <div><div class="t">CAN — Comunidad Andina</div><div class="s">Nomenclatura común NANDINA</div></div>
+            <span class="arrow">↗</span>
+          </a>
         </div>
       </div>
 
     </main>
 
-    <!-- PANEL 3: DERECHO - FICHA TÉCNICA ADUANERA & TRATADOS (25% ancho) -->
-    <aside class="panel-right-tech">
+    <!-- RAIL DERECHO: Entidad Controladora, TLCs y Acciones -->
+    <aside class="rail right panel-right-tech">
       
-      <!-- Módulo de Resumen de Impuestos y Tasas -->
-      <div class="tech-card">
-          <div class="tech-card-header">
-            <span class="icon">💸</span>
-            <h4>Resumen de Impuestos & Tasas</h4>
-          </div>
-          <div class="tax-grid-modules">
-            <div class="tax-box">
-              <span class="tax-name">Ad-Valorem</span>
-              <span class="tax-value" id="tech-adv-val">0%</span>
-            </div>
-            <div class="tax-box">
-              <span class="tax-name">IGV</span>
-              <span class="tax-value">15.5%</span>
-            </div>
-            <div class="tax-box">
-              <span class="tax-name">IPM</span>
-              <span class="tax-value">2.5%</span>
-            </div>
-            <div class="tax-box">
-              <span class="tax-name">ISC</span>
-              <span class="tax-value" id="tech-isc-val">0%</span>
-            </div>
-          </div>
-          <div class="tax-total-summary">
-            <span>Tasa Tributaria Base:</span>
-            <strong id="tech-total-rate">18% (CIF + Ad-Valorem)</strong>
-          </div>
-        </div>
+      <div class="rail-title">Entidad controladora <span>🛡</span></div>
+      <div class="control-status-box" id="tech-control-box">
+        <span class="control-entity-tag" id="tech-entity-name">MTC (Telecomunicaciones)</span>
+        <p class="control-desc" id="tech-restriction-desc">Requiere Certificado de Homologación previo al despacho aduanero.</p>
+      </div>
 
-        <!-- Módulo de Entidades Controladoras & Permisos Restringidos -->
-        <div class="tech-card">
-          <div class="tech-card-header">
-            <span class="icon">🛡️</span>
-            <h4>Entidad Controladora & VUCE</h4>
-          </div>
-          <div class="control-status-box" id="tech-control-box">
-            <span class="control-entity-tag" id="tech-entity-name">MTC (Telecomunicaciones)</span>
-            <p class="control-desc" id="tech-restriction-desc">Requiere Certificado de Homologación e Internamiento previo al despacho aduanero.</p>
-          </div>
-        </div>
+      <div class="rail-title" style="margin-top: 28px;">Acuerdos comerciales</div>
+      <div class="tlc-badges-list">
+        <div class="tlc-item">🇨🇳 TLC Perú–China · <b>0%</b></div>
+        <div class="tlc-item">🇺🇸 TLC Perú–EE.UU. · <b>0%</b></div>
+        <div class="tlc-item">🇪🇺 TLC Perú–UE · <b>0%</b></div>
+        <div class="tlc-item">🇲🇽 Alianza del Pacífico · <b>0%</b></div>
+      </div>
 
-        <!-- Módulo de Acciones Rápidas & Exportación B2B -->
-        <div class="tech-card">
-          <div class="tech-card-header">
-            <span class="icon">⚡</span>
-            <h4>Acciones Rápidas B2B</h4>
-          </div>
-          <div class="tech-actions-list">
-            <button id="btn-export-pdf" class="btn-tech-action btn-primary-action">
-              📄 Exportar Ficha Técnica (PDF/JSON)
-            </button>
-            <button id="btn-send-calc" class="btn-tech-action btn-secondary-action">
-              🧮 Enviar a Calculadora CIF
-            </button>
-          </div>
+      <!-- Glosario Técnico Aduanero & Logístico (B2B) -->
+      <div class="rail-title" style="margin-top: 28px; display: flex; justify-content: space-between; align-items: center;">
+        <span>📖 Glosario Técnico Aduanero</span>
+        <span class="fav-badge" id="glossary-count-badge">13</span>
+      </div>
+      <div class="control-status-box" style="padding: 12px;">
+        <input type="text" id="glossary-search-input" placeholder="🔍 Buscar término (FOB, CIF, VUCE, DAM)..." class="form-control-xs" style="margin-bottom: 10px;">
+        <div id="glossary-list-container" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+          <!-- Renderizado dinámicamente por initGlossary() -->
         </div>
-
-        <!-- Módulo de Convenios & TLCs -->
-        <div class="tech-card">
-          <div class="tech-card-header">
-            <span class="icon">🌐</span>
-            <h4>Acuerdos Comerciales / TLCs</h4>
-          </div>
-          <div class="tlc-badges-list">
-            <span class="tlc-badge">🇨🇳 TLC Perú - China (0%)</span>
-            <span class="tlc-badge">🇺🇸 TLC Perú - EE.UU. (0%)</span>
-            <span class="tlc-badge">🇪🇺 TLC Perú - Unión Europea (0%)</span>
-            <span class="tlc-badge">🇲🇽 Alianza del Pacífico (0%)</span>
-          </div>
-        </div>
+      </div>
 
     </aside>
 
   </div>
 
-  <!-- Modal Comparador Lado a Lado de Subpartidas Dudosas -->
+  <footer>
+    PartidaArancelaria — herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.
+  </footer>
+
+  <!-- MODAL: Comparador Lado a Lado -->
   <div id="modal-comparator" class="modal-backdrop hidden">
     <div class="modal-workbench modal-lg">
       <button id="btn-close-comparator-modal" class="modal-close-btn">✕</button>
       <h2>⚖️ Comparador Lado a Lado de Subpartidas Dudosas</h2>
       <p class="modal-subtitle">Contrasta tributos, aranceles, entidades reguladoras y requisitos SUNAT/VUCE antes de declarar.</p>
-      <div id="comparator-matrix-content" class="comparator-grid-container">
-        <!-- Matriz comparativa renderizada dinámicamente -->
-      </div>
+      <div id="comparator-matrix-content" class="comparator-grid-container"></div>
     </div>
   </div>
 
-  <!-- Modal Calculadora CIF Integrada Enterprise -->
+  <!-- MODAL: Calculadora CIF Integrada -->
   <div id="modal-calc" class="modal-backdrop hidden">
     <div class="modal-workbench modal-lg">
       <button id="btn-close-calc-modal" class="modal-close-btn">✕</button>
@@ -458,24 +631,23 @@
       <p class="modal-subtitle">Estimación precisa de tributos de importación, desgravación arancelaria por TLC y precio de venta en Soles (S/.).</p>
 
       <form id="form-calculator" style="margin-top: 18px; display: grid; gap: 16px;">
-        <!-- Sección 1: Datos de Embarque & Aranceles -->
         <div class="calc-section-card">
           <div class="calc-section-title">🚢 1. Valor de Embarque & Impuestos SUNAT</div>
           <div class="calc-form-grid">
             <div class="form-group">
-              <label for="calc-fob">💵 Valor FOB (USD $):</label>
+              <label for="calc-fob">USD FOB ($):</label>
               <input type="number" id="calc-fob" class="form-control" value="1000" step="0.01">
             </div>
             <div class="form-group">
-              <label for="calc-flete">✈️ Flete Internacional (USD $):</label>
+              <label for="calc-flete">Flete Internacional ($):</label>
               <input type="number" id="calc-flete" class="form-control" value="150" step="0.01">
             </div>
             <div class="form-group">
-              <label for="calc-seguro">🛡️ Seguro de Transporte (USD $):</label>
+              <label for="calc-seguro">Seguro ($):</label>
               <input type="number" id="calc-seguro" class="form-control" value="20" step="0.01">
             </div>
             <div class="form-group">
-              <label for="calc-advalorem">📊 Arancel Ad-Valorem (%):</label>
+              <label for="calc-advalorem">Arancel Ad-Valorem (%):</label>
               <select id="calc-advalorem" class="form-control">
                 <option value="0">0% (Libre de arancel)</option>
                 <option value="6" selected>6% (Tasa estándar)</option>
@@ -483,19 +655,19 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="calc-igv-rate">🏛️ IGV (% Ley Actualizada):</label>
-              <input type="number" id="calc-igv-rate" class="form-control" value="15.5" step="0.1" readonly style="background:var(--bg-hover); font-weight:700; color:var(--accent-blue);">
+              <label for="calc-igv-rate">IGV Ley (%):</label>
+              <input type="number" id="calc-igv-rate" class="form-control" value="15.5" step="0.1" readonly style="background:var(--panel-2); font-weight:700; color:var(--text);">
             </div>
             <div class="form-group">
-              <label for="calc-ipm-rate">🏙️ IPM (% Ley Actualizada):</label>
-              <input type="number" id="calc-ipm-rate" class="form-control" value="2.5" step="0.1" readonly style="background:var(--bg-hover); font-weight:700; color:var(--accent-blue);">
+              <label for="calc-ipm-rate">IPM Ley (%):</label>
+              <input type="number" id="calc-ipm-rate" class="form-control" value="2.5" step="0.1" readonly style="background:var(--panel-2); font-weight:700; color:var(--text);">
             </div>
             <div class="form-group">
-              <label for="calc-isc">🍷 ISC (%):</label>
+              <label for="calc-isc">ISC (%):</label>
               <input type="number" id="calc-isc" class="form-control" value="0" step="0.1">
             </div>
             <div class="form-group">
-              <label for="calc-percepcion">📋 Percepción IGV SUNAT:</label>
+              <label for="calc-percepcion">Percepción IGV SUNAT:</label>
               <select id="calc-percepcion" class="form-control">
                 <option value="3.5" selected>3.5% (Importador Frecuente)</option>
                 <option value="5.0">5.0% (Mercancía Usada)</option>
@@ -505,12 +677,11 @@
           </div>
         </div>
 
-        <!-- Sección 2: TLC & Comercialización Local -->
         <div class="calc-section-card">
-          <div class="calc-section-title">🌍 2. Tratado de Libre Comercio & Comercialización en Soles</div>
+          <div class="calc-section-title">🌍 2. Convenios & Comercialización Local</div>
           <div class="calc-form-grid">
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label for="calc-pais" style="color:var(--accent-blue);">🤝 Convenio Internacional (País de Origen):</label>
+              <label for="calc-pais" style="color:var(--brass);">Convenio Internacional (Origen):</label>
               <select id="calc-pais" class="form-control">
                 <option value="NMF" selected>Sin TLC / Arancel Base NMF (Tasa Estándar)</option>
                 <option value="CN">🇨🇳 China - TLC Perú-China (0% Ad-Valorem)</option>
@@ -520,31 +691,31 @@
                 <option value="MX">🇲🇽 México - Alianza del Pacífico (0% Ad-Valorem)</option>
               </select>
             </div>
-            <div class="form-group" id="tlc-cert-switch-group" style="grid-column: 1 / -1; background: var(--bg-panel); padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--accent-blue); display: grid; gap: 8px;">
+            <div class="form-group" id="tlc-cert-switch-group" style="grid-column: 1 / -1; background: var(--panel-2); padding: 12px 14px; border-radius: 4px; border: 1px solid var(--line); display: grid; gap: 8px;">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                <span style="font-weight: 700; font-size: 13px; color: var(--accent-blue);">📜 ¿Cuenta con Certificado de Origen emitido en origen?</span>
+                <span style="font-weight: 700; font-size: 12px; color: var(--text);">📜 ¿Cuenta con Certificado de Origen?</span>
                 <input type="hidden" id="calc-cert-origen-val" value="true">
-                <div class="switch-toggle-container" style="display: flex; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px; gap: 2px;">
-                  <button type="button" id="btn-cert-yes" style="padding: 5px 16px; font-weight: 700; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: var(--accent-green); color: #ffffff; transition: all 0.2s;">SÍ</button>
-                  <button type="button" id="btn-cert-no" style="padding: 5px 16px; font-weight: 700; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">NO</button>
+                <div class="switch-toggle-container" style="display: flex; background: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 2px; gap: 2px;">
+                  <button type="button" id="btn-cert-yes" style="padding: 4px 14px; font-weight: 700; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; background: var(--green); color: #ffffff;">SÍ</button>
+                  <button type="button" id="btn-cert-no" style="padding: 4px 14px; font-weight: 700; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; background: transparent; color: var(--text-faint);">NO</button>
                 </div>
               </div>
-              <div id="tlc-cert-switch-desc" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
-                <strong>[ SÍ ]:</strong> Desgrava Ad-Valorem a 0% por convenio verificado (Oculta alerta).<br>
-                <strong>[ NO ]:</strong> Muestra alerta naranja de penalización aduanera y cobra Arancel Estándar (6% u 11%).
+              <div id="tlc-cert-switch-desc" style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+                <strong>[ SÍ ]:</strong> Desgrava Ad-Valorem a 0% por convenio verificado.<br>
+                <strong>[ NO ]:</strong> Alerta de penalización aduanera y cobra Arancel Estándar.
               </div>
             </div>
             <div class="form-group">
-              <label for="calc-unidades">📦 Unidades a Importar:</label>
+              <label for="calc-unidades">Unidades a Importar:</label>
               <input type="number" id="calc-unidades" class="form-control" value="100" min="1">
             </div>
             <div class="form-group">
-              <label for="calc-tc">💱 Tipo de Cambio (S/.):</label>
+              <label for="calc-tc">Tipo de Cambio (S/.):</label>
               <input type="number" id="calc-tc" class="form-control" value="3.750" step="0.001">
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label for="calc-margen">📈 Margen de Ganancia Deseado (%):</label>
-              <input type="number" id="calc-margen" class="form-control" value="30" step="1">
+              <label for="calc-margen">Margen de Ganancia Deseado (%):</label>
+              <input type="number" id="calc-margen" class="form-control" value="35" step="1">
             </div>
           </div>
         </div>
@@ -555,7 +726,7 @@
     </div>
   </div>
 
-  <!-- Modal Asistente Guiado RGI (Carácter Esencial & Regla 3b/3c) -->
+  <!-- MODAL: Asistente RGI Wizard -->
   <div id="modal-rgi-wizard" class="modal-backdrop hidden">
     <div class="modal-workbench modal-lg">
       <button id="btn-close-rgi-modal" class="modal-close-btn">✕</button>
@@ -565,7 +736,7 @@
       <div id="rgi-wizard-container" style="margin-top: 18px; display: grid; gap: 16px;">
         <div class="calc-section-card">
           <div class="calc-section-title">❓ Paso 1: Tipo de Producto / Presentación Comercial</div>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">¿Cuál es la naturaleza física y empaque de la mercancía que vas a importar?</p>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">¿Cuál es la naturaleza física y empaque de la mercancía que vas a importar?</p>
           <div style="display: grid; gap: 8px;">
             <label class="vuce-check-item">
               <input type="radio" name="rgi-p1" value="rgi1" checked>
@@ -573,36 +744,76 @@
             </label>
             <label class="vuce-check-item">
               <input type="radio" name="rgi-p1" value="rgi3b">
-              <span><strong>Juego / Set / Mezcla o Artículo Compuesto:</strong> Presentado en surtido o formado por dos o más componentes de materias distintas.</span>
+              <span><strong>Juego / Set / Mezcla o Artículo Compuesto:</strong> Presentado en surtido o formado por dos o más componentes.</span>
             </label>
           </div>
         </div>
 
         <div class="calc-section-card">
           <div class="calc-section-title">⚖️ Paso 2: Análisis del Carácter Esencial (Regla 3b)</div>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">En caso de ser una mezcla o set comercial, ¿cuál componente otorga la función principal o peso determinante?</p>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">En caso de ser una mezcla o set comercial, ¿cuál componente otorga la función principal o peso determinante?</p>
           <select id="rgi-p2-factor" class="form-control">
             <option value="funcion" selected>🎯 Función Técnica Principal (Uso predominante del producto)</option>
-            <option value="materia">⚖️ Materia Constitutiva Predominante (Mayor peso o superficie en caucho/plástico/metal)</option>
-            <option value="valor">💰 Valor Comercial (Componente de mayor costo monetario del conjunto)</option>
-            <option value="iguales">⚖️ Ninguno / Todos los componentes son de igual importancia (Indivisibles)</option>
+            <option value="materia">⚖️ Materia Constitutiva Predominante (Mayor peso o superficie)</option>
+            <option value="valor">💰 Valor Comercial (Componente de mayor costo monetario)</option>
+            <option value="iguales">⚖️ Ninguno / Todos los componentes son de igual importancia</option>
           </select>
         </div>
 
         <div class="calc-section-card">
           <div class="calc-section-title">🔢 Paso 3: Resolución por Orden Numérico (Regla 3c)</div>
-          <p style="font-size: 12px; color: var(--text-secondary);">Si la Regla 3b no permite dirimir, la RGI 3c establece clasificar en la **última subpartida por orden numérico** entre las susceptibles de tenerse en cuenta.</p>
+          <p style="font-size: 12px; color: var(--text-muted);">Si la Regla 3b no permite dirimir, la RGI 3c establece clasificar en la **última subpartida por orden numérico** entre las candidatas.</p>
         </div>
 
         <button id="btn-run-rgi-diagnosis" class="btn-primary-action btn-hero-submit" type="button">
           ⚖️ Generar Análisis Técnico de Clasificación
         </button>
 
-        <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center;">
-          <em>Nota: Este análisis constituye una herramienta técnico-orientativa de apoyo y no reemplaza una Resolución de Clasificación Arancelaria emitida por SUNAT.</em>
+        <p style="font-size: 11px; color: var(--text-faint); margin-top: 8px; text-align: center;">
+          <em>Nota: Este análisis constituye una herramienta técnico-orientativa de apoyo y no reemplaza una Resolución emitida por SUNAT.</em>
         </p>
 
-        <div id="rgi-diagnosis-output" class="hidden" style="margin-top: 10px; padding: 14px; border: 1.5px solid var(--accent-blue); border-radius: 8px; background: var(--bg-app);"></div>
+        <div id="rgi-diagnosis-output" class="hidden" style="margin-top: 10px; padding: 14px; border: 1px solid var(--brass); border-radius: 4px; background: var(--panel-2);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edición Tipo de Cambio SUNAT -->
+  <div id="modal-tc-edit" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-workbench" style="max-width: 440px;">
+      <button id="btn-close-tc-modal" class="modal-close-btn" type="button">✕</button>
+      <h2>🏛️ Tipo de Cambio SUNAT / SBS</h2>
+      <div class="modal-subtitle">Ajusta el valor oficial de conversión USD a Soles (S/.) o restablece al oficial SUNAT.</div>
+      
+      <div class="form-group" style="margin-top: 16px;">
+        <label for="tc-input-value" style="font-size: 12px; font-family: var(--font-mono); color: var(--text-faint);">Valor S/. por 1 USD:</label>
+        <input id="tc-input-value" type="number" step="0.001" min="1" max="10" class="form-control" style="width: 100%; font-size: 18px; font-family: var(--font-mono); font-weight: 700; color: var(--brass); margin-top: 6px;">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+        <button id="btn-save-tc" class="btn-primary-action" type="button">✓ Guardar T.C.</button>
+        <button id="btn-reset-tc" class="btn-tech-action" type="button">↩ Restablecer SUNAT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Command Palette (Buscador Flotante Opción 2) -->
+  <div id="modal-command-palette" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-workbench modal-command-box" style="max-width: 760px; padding: 0; overflow: hidden;">
+      <div class="command-palette-head" style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel-2);">
+        <span style="font-size: 18px; color: var(--brass);">🔍</span>
+        <input id="palette-search-input" type="text" placeholder="Buscar por producto, marca comercial o código NANDINA (ej. celular, 8517)..." style="flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 15px;">
+        <kbd style="font-family: var(--font-mono); font-size: 10px; border: 1px solid var(--line); padding: 3px 7px; border-radius: 3px; color: var(--text-faint);">ESC</kbd>
+        <button id="btn-close-palette-modal" class="btn-mini-icon" type="button" style="font-size: 16px; cursor: pointer; color: var(--text-muted);">✕</button>
+      </div>
+
+      <div id="palette-results-list" class="command-palette-results" style="max-height: 440px; overflow-y: auto; padding: 6px 0;">
+        <!-- Resultados dinámicos del Command Palette -->
+      </div>
+
+      <div style="padding: 10px 20px; border-top: 1px solid var(--line); background: var(--ink); font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); display: flex; justify-content: space-between; align-items: center;">
+        <span>Navegación: <kbd style="padding: 1px 4px; border: 1px solid var(--line); border-radius: 2px;">↑</kbd> <kbd style="padding: 1px 4px; border: 1px solid var(--line); border-radius: 2px;">↓</kbd> navegar · <kbd style="padding: 1px 4px; border: 1px solid var(--line); border-radius: 2px;">Enter</kbd> seleccionar</span>
+        <span style="color: var(--brass); font-weight: 600;">Arancel de Aduanas SUNAT 2022</span>
       </div>
     </div>
   </div>
@@ -616,13 +827,13 @@
     if (window.location.protocol === 'file:') {
       const warning = document.createElement('div');
       warning.setAttribute('role', 'alert');
-      warning.style.cssText = 'position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:rgba(15,23,42,.88);padding:24px;font-family:Inter,sans-serif';
+      warning.style.cssText = 'position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:rgba(11,20,32,.95);padding:24px;font-family:IBM Plex Sans,sans-serif';
       warning.innerHTML = `
-        <div style="max-width:560px;background:#fff;color:#0f172a;border-radius:12px;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.35)">
-          <h2 style="margin:0 0 12px;color:#dc2626">La aplicación no puede ejecutarse como archivo local</h2>
-          <p style="line-height:1.55;margin:0 0 12px">El navegador bloquea el acceso a la base arancelaria cuando se abre <strong>index.html</strong> directamente.</p>
-          <p style="line-height:1.55;margin:0 0 18px">Cierra esta pestaña y ejecuta <strong>start-arancelsmart.cmd</strong>. El iniciador levantará el servidor y abrirá automáticamente la dirección correcta.</p>
-          <div style="padding:12px;border-radius:7px;background:#eff6ff;color:#1d4ed8;font-weight:700">Dirección correcta: http://localhost:3001/</div>
+        <div style="max-width:560px;background:#121D2E;color:#E8ECF1;border:1px solid #22334A;border-radius:4px;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+          <h2 style="margin:0 0 12px;color:#B8493C;font-family:Fraunces,serif">La aplicación no puede ejecutarse como archivo local</h2>
+          <p style="line-height:1.55;margin:0 0 12px;color:#8FA0B5">El navegador bloquea el acceso a la base arancelaria cuando se abre <strong>index.html</strong> directamente.</p>
+          <p style="line-height:1.55;margin:0 0 18px;color:#8FA0B5">Cierra esta pestaña y ejecuta <strong>start-arancelsmart.cmd</strong>. El iniciador levantará el servidor y abrirá automáticamente la dirección correcta.</p>
+          <div style="padding:12px;border-radius:2px;background:#17263B;border:1px solid #C9A227;color:#C9A227;font-weight:700;font-family:IBM Plex Mono,monospace">Dirección correcta: http://localhost:3000/ o http://localhost:3001/</div>
         </div>`;
       document.body.appendChild(warning);
     }
