@@ -214,6 +214,7 @@ function initSearch() {
     } else {
       btnClear.classList.add('hidden');
     }
+    updateAutocompleteDropdown(val);
     renderSearchResults();
   });
 
@@ -2192,84 +2193,140 @@ function initGlossary() {
   renderTerms('');
 }
 
+function getRecents() {
+  try {
+    return JSON.parse(localStorage.getItem('arancel_recents') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function addRecent(item) {
+  if (!item || !item.codigo10) return;
+  let recents = getRecents().filter(c => c !== item.codigo10);
+  recents.unshift(item.codigo10);
+  recents = recents.slice(0, 5);
+  localStorage.setItem('arancel_recents', JSON.stringify(recents));
+}
+
+function renderRecentsDropdown() {
+  const mainSearchInput = document.getElementById('main-search-input');
+  const autocompleteContainer = document.getElementById('autocomplete-suggestions');
+
+  if (!mainSearchInput || !autocompleteContainer) return;
+  const recents = getRecents().slice(0, 5);
+
+  if (recents.length === 0) {
+    autocompleteContainer.classList.add('hidden');
+    return;
+  }
+
+  autocompleteContainer.innerHTML = `
+    <div style="padding: 8px 14px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--brass); background: var(--panel-3); border-bottom: 1px solid var(--line); font-weight: 700;">
+      🕒 BÚSQUEDAS RECIENTES (HISTORIAL OMNIBOX)
+    </div>
+    ${recents.map(code => {
+      const item = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+      const desc = item ? state.searchEngine.getDisplayDescription(item) : 'Subpartida aduanera consultada recientemente';
+      return `
+        <div class="recent-autocomplete-item" data-code="${code}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
+          <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+            <span style="font-size: 14px; color: var(--brass);">🕒</span>
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span class="font-mono" style="font-weight: 700; color: var(--text); font-size: 13px;">${code}</span>
+              <small style="display: block; color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis;">${desc}</small>
+            </div>
+          </div>
+          <span style="font-size: 11px; color: var(--text-faint); white-space: nowrap;">Reciente ↵</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+  autocompleteContainer.classList.remove('hidden');
+
+  autocompleteContainer.querySelectorAll('.recent-autocomplete-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      mainSearchInput.value = code;
+      autocompleteContainer.classList.add('hidden');
+      const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+      if (target) {
+        state.activeItem = target;
+        updateActiveItemPanel(target);
+        renderSearchResults();
+        showToastNotification(`Abriendo reciente ${code}`);
+      }
+    });
+  });
+}
+
+function updateAutocompleteDropdown(query) {
+  const container = document.getElementById('autocomplete-suggestions');
+  if (!container) return;
+
+  if (!query.trim()) {
+    renderRecentsDropdown();
+    return;
+  }
+
+  const matches = state.searchEngine ? state.searchEngine.search({ query }).slice(0, 6) : [];
+  if (matches.length === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="padding: 6px 12px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--brass); background: var(--panel-3); border-bottom: 1px solid var(--line); font-weight: 700;">
+      🔍 SUGERENCIAS EN VIVO (${matches.length})
+    </div>
+    ${matches.map(item => {
+      const desc = state.searchEngine.getDisplayDescription(item);
+      return `
+        <div class="autocomplete-live-item" data-code="${item.codigo10}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
+          <div style="overflow: hidden; flex: 1; margin-right: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 13px;">${item.codigo10}</span>
+              <span class="adv-badge adv-${item.adValorem}" style="font-size: 9.5px;">${item.adValorem}%</span>
+            </div>
+            <small style="display: block; color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${desc}</small>
+          </div>
+          <span style="font-size: 11px; color: var(--text-faint); white-space: nowrap;">Ver ↵</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+  container.classList.remove('hidden');
+
+  container.querySelectorAll('.autocomplete-live-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      const mainInput = document.getElementById('main-search-input');
+      if (mainInput) mainInput.value = code;
+      container.classList.add('hidden');
+      const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+      if (target) {
+        state.activeItem = target;
+        updateActiveItemPanel(target);
+        renderSearchResults();
+      }
+    });
+  });
+}
+
 function initRecentSearches() {
   const wrap = document.getElementById('recent-searches-wrap');
-  const container = document.getElementById('recent-chips-container');
-  if (!wrap || !container) return;
+  if (wrap) wrap.classList.add('hidden');
 
-  function getRecents() {
-    try {
-      return JSON.parse(localStorage.getItem('arancel_recents') || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function addRecent(item) {
-    if (!item || !item.codigo10) return;
-    let recents = getRecents().filter(c => c !== item.codigo10);
-    recents.unshift(item.codigo10);
-    recents = recents.slice(0, 2);
-    localStorage.setItem('arancel_recents', JSON.stringify(recents));
-    renderRecents();
-  }
-
-  function renderRecents() {
-    const recents = getRecents().slice(0, 5);
-    // Eliminar el contenedor flotante superior manteniendo las búsquedas dentro del desplegable del buscador
-    if (wrap) wrap.classList.add('hidden');
-    
-    // Integración estilo Chrome Omnibox en el desplegable de búsqueda
-    const mainSearchInput = document.getElementById('main-search-input');
-    const autocompleteContainer = document.getElementById('autocomplete-suggestions');
-
-    if (mainSearchInput && autocompleteContainer) {
-      mainSearchInput.addEventListener('focus', () => {
-        if (!mainSearchInput.value.trim() && recents.length > 0) {
-          autocompleteContainer.innerHTML = `
-            <div style="padding: 8px 14px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--brass); background: var(--panel-3); border-bottom: 1px solid var(--line); font-weight: 700;">
-              🕒 BÚSQUEDAS RECIENTES (HISTORIAL OMNIBOX)
-            </div>
-            ${recents.map(code => {
-              const item = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
-              const desc = item ? state.searchEngine.getDisplayDescription(item) : 'Subpartida aduanera consultada recientemente';
-              return `
-                <div class="recent-autocomplete-item" data-code="${code}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
-                  <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
-                    <span style="font-size: 14px; color: var(--brass);">🕒</span>
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                      <span class="font-mono" style="font-weight: 700; color: var(--text); font-size: 13px;">${code}</span>
-                      <small style="display: block; color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis;">${desc}</small>
-                    </div>
-                  </div>
-                  <span style="font-size: 11px; color: var(--text-faint); white-space: nowrap;">Reciente ↵</span>
-                </div>
-              `;
-            }).join('')}
-          `;
-          autocompleteContainer.classList.remove('hidden');
-
-          autocompleteContainer.querySelectorAll('.recent-autocomplete-item').forEach(el => {
-            el.addEventListener('click', () => {
-              const code = el.dataset.code;
-              mainSearchInput.value = code;
-              autocompleteContainer.classList.add('hidden');
-              const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
-              if (target) {
-                state.activeItem = target;
-                updateActiveItemPanel(target);
-                renderSearchResults();
-                showToastNotification(`Abriendo reciente ${code}`);
-              }
-            });
-          });
-        }
-      });
-    }
+  const mainSearchInput = document.getElementById('main-search-input');
+  if (mainSearchInput) {
+    mainSearchInput.addEventListener('focus', () => {
+      if (!mainSearchInput.value.trim()) {
+        renderRecentsDropdown();
+      }
+    });
   }
 
   window.addRecentItemToHistory = addRecent;
-  renderRecents();
 }
 
 function renderFavoritesDrawer() {
