@@ -2489,16 +2489,9 @@ function initWorkspaceActions() {
     },
 
     getTabTitle(t) {
-      if (!t.code) return '🔍 Nueva pestaña';
-      if (state.dataset && state.dataset.subpartidas) {
-        const match = state.dataset.subpartidas.find(s => s.codigo10 === t.code || s.codigo10.replace(/\./g, '') === t.code.replace(/\./g, ''));
-        if (match) {
-          const desc = state.searchEngine ? state.searchEngine.getDisplayDescription(match) : match.descripcionOficial;
-          const shortDesc = desc ? (desc.length > 18 ? desc.substring(0, 18) + '…' : desc) : '';
-          return `${match.codigo10}${shortDesc ? ` (${shortDesc})` : ''}`;
-        }
-      }
-      return t.code;
+      if (t.customName && t.customName.trim()) return t.customName.trim();
+      if (t.code) return t.code;
+      return '🔍 Nueva pestaña';
     },
 
     render() {
@@ -2507,8 +2500,8 @@ function initWorkspaceActions() {
 
       container.innerHTML = `
         ${this.tabs.map(t => `
-          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="${t.code || 'Nueva pestaña'}">
-            <span class="code">${this.getTabTitle(t)}</span>
+          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="Doble clic izquierdo para renombrar">
+            <span class="code" data-title-id="${t.id}">${this.getTabTitle(t)}</span>
             <span class="x" data-close-id="${t.id}">✕</span>
           </div>
         `).join('')}
@@ -2516,9 +2509,17 @@ function initWorkspaceActions() {
       `;
 
       container.querySelectorAll('.apptab[data-tab-id]').forEach(el => {
+        const tabId = el.dataset.tabId;
+
         el.addEventListener('click', (e) => {
+          if (e.target.dataset.closeId || e.target.tagName === 'INPUT') return;
+          this.switchTab(tabId);
+        });
+
+        el.addEventListener('dblclick', (e) => {
           if (e.target.dataset.closeId) return;
-          this.switchTab(el.dataset.tabId);
+          e.stopPropagation();
+          this.editTabName(tabId, el);
         });
       });
 
@@ -2532,6 +2533,46 @@ function initWorkspaceActions() {
       container.querySelector('.apptab.new')?.addEventListener('click', () => {
         this.newTab();
       });
+    },
+
+    editTabName(tabId, tabEl) {
+      const tab = this.tabs.find(t => t.id === tabId);
+      if (!tab) return;
+      const codeSpan = tabEl.querySelector('.code');
+      if (!codeSpan) return;
+
+      const currentTitle = tab.customName || tab.code || '';
+      codeSpan.innerHTML = `<input type="text" class="tab-rename-input" value="${currentTitle.replace(/"/g, '&quot;')}" style="background: var(--panel-2); color: var(--text); border: 1px solid var(--brass); border-radius: 3px; padding: 1px 4px; font-family: var(--font-mono); font-size: 11.5px; outline: none; width: 110px;" />`;
+
+      const input = codeSpan.querySelector('input');
+      if (input) {
+        input.focus();
+        input.select();
+
+        const save = () => {
+          const val = input.value.trim();
+          if (val) {
+            tab.customName = val;
+          } else {
+            delete tab.customName;
+          }
+          this.saveState();
+          this.render();
+        };
+
+        input.addEventListener('blur', save, { once: true });
+        input.addEventListener('keydown', (evt) => {
+          if (evt.key === 'Enter') {
+            evt.preventDefault();
+            input.removeEventListener('blur', save);
+            save();
+          } else if (evt.key === 'Escape') {
+            evt.preventDefault();
+            input.removeEventListener('blur', save);
+            this.render();
+          }
+        });
+      }
     },
 
     switchTab(tabId) {
