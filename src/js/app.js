@@ -2302,7 +2302,7 @@ function renderFavoritesDrawer() {
   container.innerHTML = items.map(item => {
     const entityInfo = state.searchEngine.resolveEntity(item);
     return `
-      <div class="fav-drawer-card" data-code="${item.codigo10}" style="padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.15s ease;">
+      <div class="fav-drawer-card" data-code="${item.codigo10}" style="padding: 12px 14px; background: #0E1826 !important; border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.15s ease; opacity: 1 !important;">
         <div style="flex: 1; overflow: hidden;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
             <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 13px;">${item.codigo10}</span>
