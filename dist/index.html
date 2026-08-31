@@ -10,82 +10,112 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-eudOcyaq.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-C8i_EUss.css">
+  <script type="module" crossorigin src="/assets/index-CCUw91r1.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-B-F6GkSk.css">
 </head>
 <body class="theme-dark">
 
-  <!-- Banner de nota informativa -->
-  <div class="note-bar">
-    <div class="wrap note-inner">
-      <span><b>PartidaArancelaria</b> — Herramienta independiente de consulta del Arancel de Aduanas del Perú</span>
-      <span class="note-sub font-mono">⚠️ Base: Arancel 2022 (D.S. N.º 404-2021-EF) · <span id="catalog-count-badge">8,015</span> subpartidas · Verifique modificaciones posteriores en fuentes oficiales</span>
+  <div class="caption">Propuesta de escritorio — <b>PartidaArancelaria Workspace</b> · paneles fijos, sin recargar página</div>
+
+  <div class="app">
+
+    <!-- Chrome Window Bar -->
+    <div class="chrome">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="chrome-title">PartidaArancelaria — Workspace de escritorio</div>
     </div>
-  </div>
 
-  <!-- Top Navigation Bar -->
-  <header class="topbar">
-    <div class="wrap topbar-inner">
-      <div class="brand">
-        <div class="brand-mark">PA</div>
-        <div>
-          <div class="brand-name">Partida<span class="accent-gold">Arancelaria</span></div>
-          <div class="brand-sub">Herramienta independiente · Arancel 2022</div>
-        </div>
-      </div>
+    <!-- App Tab Strip -->
+    <div class="tabstrip">
+      <div class="apptab active"><span class="code" id="apptab-code-1">8517.13.00.00</span><span class="x">✕</span></div>
+      <div class="apptab"><span class="code" id="apptab-code-2">6402.19.00.00</span><span class="x">✕</span></div>
+      <div class="apptab"><span class="code" id="apptab-code-3">8703.23.00.00</span><span class="x">✕</span></div>
+      <div class="apptab new" title="Nueva consulta">+</div>
+    </div>
 
-      <!-- Buscador Global -->
-      <div class="search-bar-wrap">
-        <div class="search-bar">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="main-search-input" placeholder="Buscar por partida, descripción o palabra clave…" autocomplete="off" spellcheck="false">
-          <kbd id="kbd-shortcut">Ctrl K</kbd>
-          <button id="btn-clear-search" class="btn-clear hidden">✕</button>
-        </div>
-        <div id="autocomplete-suggestions" class="autocomplete-dropdown hidden"></div>
-      </div>
-
-      <!-- Meta info y botones de accion -->
-      <div class="topbar-meta">
-        <div id="recent-searches-wrap" class="recent-searches-box hidden">
-          <span style="color: var(--text-faint); white-space: nowrap;">🕒 Recientes:</span>
-          <div id="recent-chips-container" style="display: flex; gap: 4px; flex-wrap: nowrap;"></div>
-        </div>
-        <div id="sunat-tc-badge" class="tc-chip" title="Haz clic para personalizar el Tipo de Cambio SBS / Referencial para simulación">
-          <span class="dot"></span>
-          <span class="tc-label">T.C. SBS</span>
-          <b id="sunat-tc-val">S/ 3.750</b>
-          <span class="tc-edit-icon" title="Editar Tipo de Cambio">✏️</span>
-        </div>
-        <button id="btn-favorites" class="btn-head-action" title="Guardados">
-          ⭐ <span id="fav-count" class="fav-badge">0</span>
-        </button>
-        <div id="btn-theme-toggle" class="mode-toggle">☀ Claro</div>
+    <!-- Banner de nota informativa -->
+    <div class="note-bar" style="border-bottom: 1px solid var(--line);">
+      <div class="wrap note-inner" style="max-width: 100%; padding: 8px 16px;">
+        <span><b>PartidaArancelaria</b> — Herramienta independiente de consulta del Arancel de Aduanas del Perú</span>
+        <span class="note-sub font-mono">⚠️ Base: Arancel 2022 (D.S. N.º 404-2021-EF) · <span id="catalog-count-badge">8,015</span> subpartidas · Verifique modificaciones posteriores en fuentes oficiales</span>
       </div>
     </div>
-  </header>
 
-  <!-- WORKBENCH LAYOUT (3 COLUMNAS) -->
-  <div class="wrap layout workbench-container">
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+      <div class="wrap topbar-inner" style="max-width: 100%; padding: 12px 16px;">
+        <div class="brand">
+          <div class="brand-mark">PA</div>
+          <div>
+            <div class="brand-name">Partida<span class="accent-gold">Arancelaria</span></div>
+            <div class="brand-sub">Herramienta independiente · Arancel 2022</div>
+          </div>
+        </div>
 
-    <!-- RAIL IZQUIERDO: Árbol NANDINA y En esta ficha -->
-    <aside class="rail panel-left-tree">
-      <div class="rail-title">
-        <span>Nomenclatura NANDINA</span>
-        <button id="btn-collapse-tree" class="btn-mini-icon" title="Contraer todo">📁</button>
+        <!-- Buscador Global -->
+        <div class="search-bar-wrap">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="main-search-input" placeholder="Buscar por partida, descripción o palabra clave…" autocomplete="off" spellcheck="false">
+            <kbd id="kbd-shortcut">Ctrl K</kbd>
+            <button id="btn-clear-search" class="btn-clear hidden">✕</button>
+          </div>
+          <div id="autocomplete-suggestions" class="autocomplete-dropdown hidden"></div>
+        </div>
+
+        <!-- Meta info y botones de accion -->
+        <div class="topbar-meta">
+          <div id="recent-searches-wrap" class="recent-searches-box hidden">
+            <span style="color: var(--text-faint); white-space: nowrap;">🕒 Recientes:</span>
+            <div id="recent-chips-container" style="display: flex; gap: 4px; flex-wrap: nowrap;"></div>
+          </div>
+          <div id="sunat-tc-badge" class="tc-chip" title="Haz clic para personalizar el Tipo de Cambio SBS / Referencial para simulación">
+            <span class="dot"></span>
+            <span class="tc-label">T.C. SBS</span>
+            <b id="sunat-tc-val">S/ 3.750</b>
+            <span class="tc-edit-icon" title="Editar Tipo de Cambio">✏️</span>
+          </div>
+          <button id="btn-favorites" class="btn-head-action" title="Guardados">
+            ⭐ <span id="fav-count" class="fav-badge">0</span>
+          </button>
+          <div id="btn-theme-toggle" class="mode-toggle">☀ Claro</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- WORKBENCH BODY GRID (4 COLUMNAS: ICON RAIL | NANDINA TREE | MAIN CENTER | DOCK RIGHT) -->
+    <div class="body-grid workbench-container">
+
+      <!-- ICON RAIL (64px) -->
+      <div class="icon-rail">
+        <div class="rail-btn active" title="Buscador y Arbol NANDINA">🔍</div>
+        <div class="rail-btn" title="Guardados / Favoritos">⭐</div>
+        <div class="rail-btn" title="Busquedas Recientes">🕐</div>
+        <div class="rail-btn" title="Calculadora & Tributos">📊</div>
+        <div class="rail-btn" title="Checklist VUCE">✅</div>
+        <div class="rail-spacer"></div>
+        <div class="rail-btn" title="Ajustes de Tema">⚙</div>
+        <div class="rail-btn avatar">PA</div>
       </div>
 
-      <div class="tree-search-filter">
-        <input type="text" id="tree-filter-input" placeholder="Filtrar secciones o capítulos…" class="form-control-xs">
-      </div>
+      <!-- RAIL IZQUIERDO: Árbol NANDINA y En esta ficha -->
+      <aside class="rail panel-left-tree">
+        <div class="rail-title">
+          <span>Nomenclatura NANDINA</span>
+          <button id="btn-collapse-tree" class="btn-mini-icon" title="Contraer todo">📁</button>
+        </div>
 
-      <div id="nandina-tree-container" class="tree tree-view-body" style="margin-bottom: 30px;">
-        <!-- Árbol Jerárquico renderizado dinámicamente -->
-      </div>
-    </aside>
+        <div class="tree-search-filter">
+          <input type="text" id="tree-filter-input" placeholder="Filtrar secciones o capítulos…" class="form-control-xs">
+        </div>
 
-    <!-- MAIN CENTRAL: Ficha Hero, Pestañas, Tablas y Contenido -->
-    <main class="main panel-center-main">
+        <div id="nandina-tree-container" class="tree tree-view-body" style="margin-bottom: 30px;">
+          <!-- Árbol Jerárquico renderizado dinámicamente -->
+        </div>
+      </aside>
+
+      <!-- MAIN CENTRAL: Ficha Hero, Pestañas, Tablas y Contenido -->
+      <main class="main center panel-center-main">
 
       <!-- Hero: Classification Stamp Card -->
       <div class="stamp-card subheading-active-header">
@@ -620,42 +650,61 @@
 
     </main>
 
-    <!-- RAIL DERECHO: Entidad Controladora, TLCs y Acciones -->
-    <aside class="rail right panel-right-tech">
+    <!-- RAIL DERECHO: Entidad Controladora, TLCs y Glosario (Dock Anclado Permanente) -->
+    <aside class="rail right dock panel-right-tech">
       
-      <div class="rail-title">Entidad controladora <span>🛡</span></div>
-      <div class="control-status-box" id="tech-control-box">
-        <span class="control-entity-tag" id="tech-entity-name">MTC (Telecomunicaciones)</span>
-        <p class="control-desc" id="tech-restriction-desc">Requiere Certificado de Homologación previo al despacho aduanero.</p>
+      <div class="dock-head">
+        <span class="dot"></span>
+        <h3>Calculadora CIF &amp; Entidad</h3>
+        <span>Anclada</span>
+        <span class="dock-collapse" title="Panel Anclado">»</span>
       </div>
 
-      <div class="rail-title" style="margin-top: 28px;">Acuerdos comerciales</div>
-      <div class="tlc-badges-list">
-        <div class="tlc-item">🇨🇳 TLC Perú–China · <b>0%</b></div>
-        <div class="tlc-item">🇺🇸 TLC Perú–EE.UU. · <b>0%</b></div>
-        <div class="tlc-item">🇪🇺 TLC Perú–UE · <b>0%</b></div>
-        <div class="tlc-item">🇲🇽 Alianza del Pacífico · <b>0%</b></div>
-      </div>
+      <div class="dock-body">
+        <div class="rail-title" style="margin-top: 6px;">Entidad controladora <span>🛡</span></div>
+        <div class="control-status-box" id="tech-control-box" style="margin-bottom: 16px;">
+          <span class="control-entity-tag" id="tech-entity-name">MTC (Telecomunicaciones)</span>
+          <p class="control-desc" id="tech-restriction-desc">Requiere Certificado de Homologación previo al despacho aduanero.</p>
+        </div>
 
-      <!-- Glosario Técnico Aduanero & Logístico (B2B) -->
-      <div class="rail-title" style="margin-top: 28px; display: flex; justify-content: space-between; align-items: center;">
-        <span>📖 Glosario Técnico Aduanero</span>
-        <span class="fav-badge" id="glossary-count-badge">13</span>
-      </div>
-      <div class="control-status-box" style="padding: 12px;">
-        <input type="text" id="glossary-search-input" placeholder="🔍 Buscar término (FOB, CIF, VUCE, DAM)..." class="form-control-xs" style="margin-bottom: 10px;">
-        <div id="glossary-list-container" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
-          <!-- Renderizado dinámicamente por initGlossary() -->
+        <div class="rail-title" style="margin-top: 18px;">Acuerdos comerciales</div>
+        <div class="tlc-badges-list" style="margin-bottom: 20px;">
+          <div class="tlc-item">🇨🇳 TLC Perú–China · Preferencia según subpartida</div>
+          <div class="tlc-item">🇺🇸 TLC Perú–EE.UU. · Preferencia según subpartida</div>
+          <div class="tlc-item">🇪🇺 TLC Perú–UE · Preferencia según subpartida</div>
+          <div class="tlc-item">🇲🇽 Alianza del Pacífico · Preferencia según subpartida</div>
+        </div>
+
+        <!-- Glosario Técnico Aduanero & Logístico (B2B) -->
+        <div class="rail-title" style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center;">
+          <span>📖 Glosario Técnico Aduanero</span>
+          <span class="fav-badge" id="glossary-count-badge">13</span>
+        </div>
+        <div class="control-status-box" style="padding: 12px;">
+          <input type="text" id="glossary-search-input" placeholder="🔍 Buscar término (FOB, CIF, VUCE, DAM)..." class="form-control-xs" style="margin-bottom: 10px;">
+          <div id="glossary-list-container" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+            <!-- Renderizado dinámicamente por initGlossary() -->
+          </div>
         </div>
       </div>
 
     </aside>
 
+  </div> <!-- Cierre .body-grid -->
+
+  <!-- Status Bar de Escritorio -->
+  <div class="statusbar">
+    <span class="dot"></span> T.C. SUNAT S/. <span id="sb-tc-val">3.750</span>
+    <span>Dataset v2022.12.31 · <span id="sb-count-val">8,015</span> subpartidas</span>
+    <span>3 pestañas abiertas</span>
+    <span class="sep">⌘K Buscar · ⌘1-9 Pestañas · ⌘E Exportar</span>
   </div>
 
-  <footer>
-    PartidaArancelaria — herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.
-  </footer>
+</div> <!-- Cierre .app -->
+
+<footer>
+  PartidaArancelaria — herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.
+</footer>
 
   <!-- MODAL: Comparador Lado a Lado -->
   <div id="modal-comparator" class="modal-backdrop hidden">
