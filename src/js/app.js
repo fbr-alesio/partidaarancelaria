@@ -2500,7 +2500,7 @@ function initWorkspaceActions() {
 
       container.innerHTML = `
         ${this.tabs.map(t => `
-          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="Doble clic izquierdo para renombrar">
+          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="Doble clic para cambiar nombre">
             <span class="code" data-title-id="${t.id}">${this.getTabTitle(t)}</span>
             <span class="x" data-close-id="${t.id}">✕</span>
           </div>
@@ -2513,12 +2513,15 @@ function initWorkspaceActions() {
 
         el.addEventListener('click', (e) => {
           if (e.target.dataset.closeId || e.target.tagName === 'INPUT') return;
-          this.switchTab(tabId);
+          if (this.activeTabId !== tabId) {
+            this.switchTab(tabId);
+          }
         });
 
         el.addEventListener('dblclick', (e) => {
           if (e.target.dataset.closeId) return;
           e.stopPropagation();
+          e.preventDefault();
           this.editTabName(tabId, el);
         });
       });
@@ -2541,15 +2544,20 @@ function initWorkspaceActions() {
       const codeSpan = tabEl.querySelector('.code');
       if (!codeSpan) return;
 
+      if (codeSpan.querySelector('input')) return;
+
       const currentTitle = tab.customName || tab.code || '';
-      codeSpan.innerHTML = `<input type="text" class="tab-rename-input" value="${currentTitle.replace(/"/g, '&quot;')}" style="background: var(--panel-2); color: var(--text); border: 1px solid var(--brass); border-radius: 3px; padding: 1px 4px; font-family: var(--font-mono); font-size: 11.5px; outline: none; width: 110px;" />`;
+      codeSpan.innerHTML = `<input type="text" class="tab-rename-input" value="${currentTitle.replace(/"/g, '&quot;')}" style="background: var(--panel-2); color: var(--text); border: 1px solid var(--brass); border-radius: 3px; padding: 2px 6px; font-family: var(--font-mono); font-size: 12px; outline: none; width: 120px;" />`;
 
       const input = codeSpan.querySelector('input');
       if (input) {
         input.focus();
         input.select();
 
+        let isSaved = false;
         const save = () => {
+          if (isSaved) return;
+          isSaved = true;
           const val = input.value.trim();
           if (val) {
             tab.customName = val;
@@ -2560,15 +2568,14 @@ function initWorkspaceActions() {
           this.render();
         };
 
-        input.addEventListener('blur', save, { once: true });
+        input.addEventListener('blur', save);
         input.addEventListener('keydown', (evt) => {
           if (evt.key === 'Enter') {
             evt.preventDefault();
-            input.removeEventListener('blur', save);
             save();
           } else if (evt.key === 'Escape') {
             evt.preventDefault();
-            input.removeEventListener('blur', save);
+            isSaved = true;
             this.render();
           }
         });
@@ -2634,10 +2641,14 @@ function initWorkspaceActions() {
 
     updateActiveTabCode(code, fromSearch = false) {
       if (!code) return;
-      const active = this.tabs.find(t => t.id === this.activeTabId);
+      let active = this.tabs.find(t => t.id === this.activeTabId);
 
-      // Si se selecciona una partida desde el buscador y la pestaña activa ya tiene una partida asignada distinta
-      if (fromSearch && active && active.code && active.code !== code) {
+      if (!active) {
+        this.newTab(code);
+        return;
+      }
+
+      if (fromSearch && active.code && active.code !== code) {
         const existing = this.tabs.find(t => t.code === code);
         if (existing) {
           this.switchTab(existing.id);
@@ -2647,11 +2658,10 @@ function initWorkspaceActions() {
         return;
       }
 
-      if (active) {
-        active.code = code;
-        this.saveState();
-        this.render();
-      }
+      active.code = code;
+      delete active.customName;
+      this.saveState();
+      this.render();
     }
   };
 
