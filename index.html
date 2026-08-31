@@ -17,8 +17,8 @@
   <!-- Banner de nota informativa -->
   <div class="note-bar">
     <div class="wrap note-inner">
-      <span><b>PartidaArancelaria</b> — Clasificador SUNAT & Nomenclatura NANDINA VII Enmienda 2022</span>
-      <span class="note-sub font-mono">Dataset oficial v2022.12.31 · 8,015 subpartidas</span>
+      <span><b>PartidaArancelaria</b> — Herramienta independiente de consulta del Arancel de Aduanas del Perú</span>
+      <span class="note-sub font-mono">⚠️ Base: Arancel 2022 (D.S. N.º 404-2021-EF) · <span id="catalog-count-badge">8,015</span> subpartidas · Verifique modificaciones posteriores en fuentes oficiales</span>
     </div>
   </div>
 
@@ -29,7 +29,7 @@
         <div class="brand-mark">PA</div>
         <div>
           <div class="brand-name">Partida<span class="accent-gold">Arancelaria</span></div>
-          <div class="brand-sub">Clasificador SUNAT · NANDINA 2022</div>
+          <div class="brand-sub">Herramienta independiente · Arancel 2022</div>
         </div>
       </div>
 
@@ -50,10 +50,10 @@
           <span style="color: var(--text-faint); white-space: nowrap;">🕒 Recientes:</span>
           <div id="recent-chips-container" style="display: flex; gap: 4px; flex-wrap: nowrap;"></div>
         </div>
-        <div id="sunat-tc-badge" class="tc-chip" title="Haz clic para personalizar el Tipo de Cambio SUNAT / SBS">
+        <div id="sunat-tc-badge" class="tc-chip" title="Haz clic para personalizar el Tipo de Cambio SBS / Referencial para simulación">
           <span class="dot"></span>
-          <span class="tc-label">T.C. SUNAT</span>
-          <b id="sunat-tc-val">S/. 3.750</b>
+          <span class="tc-label">T.C. SBS</span>
+          <b id="sunat-tc-val">S/ 3.750</b>
           <span class="tc-edit-icon" title="Editar Tipo de Cambio">✏️</span>
         </div>
         <button id="btn-favorites" class="btn-head-action" title="Guardados">
@@ -273,12 +273,12 @@
       <!-- TAB 3: CALCULADORA CIF & RENTABILIDAD (SECCIÓN PRINCIPAL DE FICHA) -->
       <div id="tab-cif" class="center-tab-content section-tab active-cif-tab">
         <div class="section-head" id="calculadora-cif">
-          <h2>Calculadora CIF &amp; Liquidación SUNAT</h2>
-          <div class="desc">Tributos de importación, desgravación por TLC y precio de venta en soles.</div>
+          <h2>Simulador de liquidación de importación</h2>
+          <div class="desc">Estimación referencial de tributos de importación, desgravación por convenio y comercialización en soles.</div>
         </div>
 
         <div class="cif-section">
-          <div class="cif-eyebrow">★ Herramienta principal</div>
+          <div class="cif-eyebrow">★ Estimación tributaria &amp; desembolso</div>
 
           <div class="cif-grid">
             <div class="cif-form">
@@ -286,31 +286,38 @@
               <div class="cif-step">
                 <div class="cif-step-head">
                   <div class="cif-step-num">1</div>
-                  <h3>Valor de embarque &amp; impuestos SUNAT</h3>
+                  <h3>Valor de embarque &amp; tributos de importación</h3>
                   <span>🚢 USD</span>
                 </div>
                 <div class="field-grid">
-                  <div class="field"><label>Valor FOB (USD)</label><input id="inpage-fob" value="4,200.00"></div>
-                  <div class="field"><label>Flete internacional (USD)</label><input id="inpage-flete" value="380.00"></div>
-                  <div class="field"><label>Seguro de transporte (USD)</label><input id="inpage-seguro" value="42.00"></div>
+                  <div class="field"><label>Valor FOB (USD)</label><input id="inpage-fob" value="4,200.00" min="0"></div>
+                  <div class="field"><label>Flete internacional (USD)</label><input id="inpage-flete" value="380.00" min="0"></div>
+                  <div class="field"><label>Seguro de transporte (USD)</label><input id="inpage-seguro" value="42.00" min="0"></div>
                   <div class="field">
-                    <label>Arancel Ad&nbsp;Valorem</label>
-                    <div class="rate-select">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <label>Arancel Ad&nbsp;Valorem</label>
+                      <span id="adv-lock-badge" style="font-size:10px; color:var(--accent-gold); background:rgba(217,119,6,0.15); padding:1px 5px; border-radius:4px;">🔒 Oficial</span>
+                    </div>
+                    <div class="rate-select" id="rate-select-adv">
                       <div class="rate-opt selected" data-inpage-adv="0">0%</div>
+                      <div class="rate-opt" data-inpage-adv="4">4%</div>
                       <div class="rate-opt" data-inpage-adv="6">6%</div>
                       <div class="rate-opt" data-inpage-adv="11">11%</div>
                     </div>
+                    <div id="adv-mode-warning" class="hidden" style="font-size:10px; color:#f59e0b; margin-top:3px;">⚠️ Tasa manual para simulación.</div>
                   </div>
-                  <div class="field"><label>IGV (%)</label><input value="15.5" readonly style="color:var(--brass); font-weight:700;"></div>
-                  <div class="field"><label>IPM (%)</label><input value="2.5" readonly style="color:var(--brass); font-weight:700;"></div>
-                  <div class="field"><label>ISC (%)</label><input id="inpage-isc" value="0"></div>
+                  <div class="field"><label>IGV Ley (15.5%)</label><input value="15.5%" readonly style="color:var(--brass); font-weight:700;"></div>
+                  <div class="field"><label>IPM Ley (2.5%)</label><input value="2.5%" readonly style="color:var(--brass); font-weight:700;"></div>
+                  <div class="field"><label>ISC (%)</label><input id="inpage-isc" value="0" placeholder="No determinado"></div>
                   <div class="field">
-                    <label>Percepción IGV SUNAT</label>
+                    <label>Régimen de percepción aplicable</label>
                     <div class="rate-select">
+                      <div class="rate-opt" data-inpage-perc="0">0% (No aplica)</div>
                       <div class="rate-opt selected" data-inpage-perc="3.5">3.5%</div>
                       <div class="rate-opt" data-inpage-perc="5.0">5.0%</div>
                       <div class="rate-opt" data-inpage-perc="10.0">10.0%</div>
                     </div>
+                    <div style="font-size:10px; color:var(--text-faint); margin-top:2px;">La tasa depende del supuesto normativo aplicable.</div>
                   </div>
                 </div>
               </div>
@@ -318,67 +325,79 @@
               <div class="cif-step">
                 <div class="cif-step-head">
                   <div class="cif-step-num">2</div>
-                  <h3>TLC &amp; comercialización en soles</h3>
+                  <h3>Preferencia arancelaria &amp; comercialización</h3>
                   <span>🌍 S/.</span>
                 </div>
                 <div class="field-grid" style="margin-bottom:16px;">
                   <div class="field" style="grid-column:1/-1;">
-                    <label>Convenio internacional (país de origen)</label>
+                    <label>Convenio comercial (país de origen)</label>
                     <select id="inpage-pais">
-                      <option value="NMF" selected>Sin TLC / Arancel Base NMF (Tasa Estándar)</option>
-                      <option value="CN">🇨🇳 China — TLC Perú-China (0% Ad&nbsp;Valorem)</option>
-                      <option value="US">🇺🇸 EE.UU. — TLC Perú-EE.UU. (0% Ad&nbsp;Valorem)</option>
-                      <option value="EU">🇪🇺 Unión Europea — TLC Perú-UE (0% Ad&nbsp;Valorem)</option>
+                      <option value="NMF" selected>Sin convenio / Tratamiento General NMF</option>
+                      <option value="CN">🇨🇳 China — Preferencia según subpartida</option>
+                      <option value="US">🇺🇸 EE.UU. — Preferencia según subpartida</option>
+                      <option value="EU">🇪🇺 Unión Europea — Preferencia según subpartida</option>
                       <option value="CAN">🇨🇴 Comunidad Andina — CAN (0% Arancel)</option>
-                      <option value="MX">🇲🇽 México — Alianza del Pacífico (0% Ad&nbsp;Valorem)</option>
+                      <option value="MX">🇲🇽 México — Preferencia según subpartida</option>
                     </select>
                   </div>
                 </div>
 
                 <div class="field" style="margin-bottom:16px;">
-                  <label>¿Cuenta con certificado de origen emitido en origen?</label>
+                  <label>¿Desea evaluar una preferencia arancelaria?</label>
                   <div class="toggle-pair">
                     <div class="toggle-opt selected" id="inpage-cert-yes">SÍ</div>
                     <div class="toggle-opt" id="inpage-cert-no">NO</div>
                   </div>
                 </div>
-                <div class="alert-banner ok" id="inpage-cert-banner">✓ Desgrava el Ad&nbsp;Valorem a 0% por convenio verificado. Sin certificado, se aplicaría la tasa estándar (6% u 11%) más una alerta de penalización aduanera.</div>
+                <div class="alert-banner ok" id="inpage-cert-banner">SÍ: Se evalúa la preferencia arancelaria según el acuerdo comercial, subpartida, regla de origen y requisitos aplicables.</div>
 
                 <div class="field-grid" style="margin-top:18px;">
-                  <div class="field"><label>Unidades a importar</label><input id="inpage-unidades" value="120"></div>
-                  <div class="field"><label>Tipo de cambio (S/.)</label><input id="inpage-tc" value="3.750"></div>
-                  <div class="field" style="grid-column:1/-1;"><label>Margen de ganancia deseado (%)</label><input id="inpage-margen" value="35"></div>
+                  <div class="field"><label>Unidades a importar</label><input id="inpage-unidades" value="120" min="1"></div>
+                  <div class="field"><label>Tipo de cambio SBS (S/.)</label><input id="inpage-tc" value="3.750"></div>
+                  <div class="field" style="grid-column:1/-1;"><label>Margen sobre costo (%)</label><input id="inpage-margen" value="35" min="0"></div>
                 </div>
               </div>
 
             </div>
 
             <div class="cif-result-panel">
-              <div class="cif-group-label">Valor en aduana</div>
+              <div class="cif-group-label">Valor en Aduana estimado</div>
               <div class="cif-line"><span>Valor FOB</span><b id="res-fob-val">USD 4,200.00</b></div>
               <div class="cif-line"><span>Flete + seguro</span><b id="res-flete-seg-val">USD 422.00</b></div>
-              <div class="cif-line"><span>Valor CIF</span><b id="res-cif-val">USD 4,622.00</b></div>
+              <div class="cif-line"><span>CIF estimado</span><b id="res-cif-val">USD 4,622.00</b></div>
 
-              <div class="cif-group-label">Tributos SUNAT</div>
-              <div class="cif-line"><span id="res-adv-label">Ad&nbsp;Valorem (0% TLC)</span><b id="res-adv-val">USD 0.00</b></div>
-              <div class="cif-line"><span>IGV + IPM (18%)</span><b id="res-igv-ipm-val">USD 831.96</b></div>
-              <div class="cif-line"><span>ISC</span><b id="res-isc-val">USD 0.00</b></div>
-              <div class="cif-line"><span id="res-percepcion-label">Percepción SUNAT (3.5%)</span><b id="res-percepcion-val">USD 161.77</b></div>
-
-              <div class="cif-line final">
-                <span>Costo total nacionalizado</span>
-                <b id="res-landed-total">S/. 21,467.30</b>
+              <div class="cif-group-label">Tributos de importación</div>
+              <div class="cif-line"><span id="res-adv-label">Ad&nbsp;Valorem (0% Aplicado)</span><b id="res-adv-val">USD 0.00</b></div>
+              <div class="cif-line"><span>IGV (15.5%) + IPM (2.5%)</span><b id="res-igv-ipm-val">USD 831.96</b></div>
+              <div class="cif-line"><span>ISC</span><b id="res-isc-val">No determinado</b></div>
+              
+              <div class="cif-line highlight">
+                <span>Costo estimado de importación</span>
+                <b id="res-costo-estimado-val">USD 5,453.96</b>
               </div>
 
-              <div class="cif-group-label">Rentabilidad sugerida (<span id="res-unid-lbl">120</span> unid.)</div>
+              <div class="cif-group-label" style="margin-top:10px;">Pago a cuenta / Percepción</div>
+              <div class="cif-line"><span id="res-percepcion-label">Percepción IGV (3.5%)</span><b id="res-percepcion-val">USD 190.89</b></div>
+
+              <div class="cif-line final" style="margin-top:8px;">
+                <span>Desembolso total estimado</span>
+                <b id="res-landed-total">S/ 21,168.19</b>
+              </div>
+
+              <div class="cif-group-label">Precio de venta estimado (<span id="res-unid-lbl">120</span> unid.)</div>
               <div class="cif-unit-row">
-                <div class="cif-unit-cell"><div class="k">Costo unitario</div><div class="v" id="res-costo-unid">S/. 178.89</div></div>
-                <div class="cif-unit-cell"><div class="k">Venta sugerida</div><div class="v" id="res-venta-unid">S/. 241.50</div></div>
-                <div class="cif-unit-cell profit"><div class="k">Utilidad unitaria</div><div class="v" id="res-util-unid">S/. 62.61</div></div>
+                <div class="cif-unit-cell"><div class="k">Costo unitario</div><div class="v" id="res-costo-unid">S/ 170.44</div></div>
+                <div class="cif-unit-cell"><div class="k">Venta estimada</div><div class="v" id="res-venta-unid">S/ 230.09</div></div>
+                <div class="cif-unit-cell profit"><div class="k">Utilidad bruta</div><div class="v" id="res-util-unid">S/ 59.65</div></div>
+              </div>
+
+              <div style="margin-top: 14px; padding: 10px; background: rgba(0,0,0,0.25); border-radius: 6px; font-size: 10.5px; color: var(--text-faint); border: 1px solid var(--border-subtle); line-height: 1.4;">
+                ⚠️ <b>Resultado referencial</b>: No constituye determinación oficial de tributos, clasificación arancelaria ni autorización de importación. Verifique información en fuentes oficiales.<br>
+                ℹ️ <i>Derechos antidumping/compensatorios y otros recargos: No incluidos salvo indicación expresa. El IGV/Percepción constituye pago a cuenta/crédito fiscal.</i>
               </div>
 
               <!-- Botones de Exportación Contable (PDF & Excel) -->
-              <div class="cif-export-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+              <div class="cif-export-actions" style="display: flex; gap: 10px; margin-top: 14px;">
                 <button id="btn-cif-export-pdf" class="btn-rail-action" style="flex: 1; padding: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 6px;">📄 Exportar PDF</button>
                 <button id="btn-cif-export-excel" class="btn-rail-action btn-gold" style="flex: 1; padding: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 6px;">📊 Exportar Excel</button>
               </div>
@@ -387,35 +406,34 @@
         </div>
       </div>
 
-      <!-- TAB 4: RESOLUCIONES SUNAT -->
+      <!-- TAB 4: RESOLUCIONES & CRITERIOS -->
       <div id="tab-resoluciones" class="center-tab-content section-tab">
         <div class="section-head" id="resoluciones">
-          <h2>Resoluciones vinculantes SUNAT</h2>
-          <div class="desc">Jurisprudencia arancelaria de la Intendencia Nacional de Desarrollo de Estrategia Aduanera.</div>
+          <h2>Referencias y Criterios de Clasificación</h2>
+          <div class="desc">Criterios de clasificación y resoluciones vinculantes de la Intendencia Nacional de Desarrollo de Estrategia Aduanera.</div>
         </div>
 
         <div class="res-list" style="margin-bottom: 20px;">
-          <div class="res-item">
-            <div class="res-num">RI Nº 000123-2023</div>
+          <div class="res-item" style="border-left: 3px solid var(--accent-gold);">
+            <div class="res-num">Caso demostrativo (Ejemplo ilustrativo)</div>
             <div class="res-body">
               <div class="t">Clasificación de teléfonos móviles con doble función (SIM + datos IoT)</div>
-              <div class="d">Precisa el alcance de la subpartida 8517.13.00.00 frente a equipos híbridos de telecomunicaciones y transmisión de datos.</div>
+              <div class="d">Ejemplo demostrativo: Ilustra el criterio de la subpartida 8517.13.00.00 frente a equipos híbridos de telecomunicaciones y transmisión de datos.</div>
             </div>
             <div class="res-tag">Sección XVI</div>
           </div>
-          <div class="res-item">
-            <div class="res-num">RI Nº 000098-2022</div>
+          <div class="res-item" style="border-left: 3px solid var(--accent-gold);">
+            <div class="res-num">Caso demostrativo (Ejemplo ilustrativo)</div>
             <div class="res-body">
               <div class="t">Criterio de carácter esencial en sets de accesorios para telefonía</div>
-              <div class="d">Aplica la Regla 3b para sets vendidos en un mismo empaque comercial con cargador y funda.</div>
+              <div class="d">Ejemplo demostrativo: Ilustra la aplicación de la Regla 3b para mercancías presentadas en juegos o surtidos para la venta al por menor.</div>
             </div>
             <div class="res-tag">RGI 3b</div>
           </div>
-          <div class="res-item">
-            <div class="res-num">RI Nº 000041-2022</div>
-            <div class="res-body">
-              <div class="t">Homologación MTC como condición previa al levante</div>
-              <div class="d">Establece que el certificado de homologación es exigible antes del despacho aduanero, no como subsanación posterior.</div>
+        </div>
+
+        <div id="sunat-resolutions-list" style="display: grid; gap: 14px;"></div>
+      </div>o como subsanación posterior.</div>
             </div>
             <div class="res-tag">VUCE</div>
           </div>
@@ -505,8 +523,8 @@
       <!-- TAB 8: CHECKLIST VUCE -->
       <div id="tab-vuce" class="center-tab-content section-tab">
         <div class="section-head" id="checklist">
-          <h2>Expediente VUCE</h2>
-          <div class="desc">Checklist referencial antes del arribo de la nave.</div>
+          <h2>Checklist referencial de importación</h2>
+          <div class="desc">Documentación referencial requerida para el trámite y despacho aduanero de la mercancía.</div>
         </div>
         <div class="checklist">
           <div class="checklist-head">
@@ -518,22 +536,22 @@
           <div class="vuce-checklist-container">
             <div class="check-item">
               <div class="check-box done"></div>
-              <div><div class="t">Bill of Lading (B/L)</div><div class="d">Documento de transporte internacional emitido por la naviera.</div></div>
+              <div><div class="t">Documento de transporte</div><div class="d">B/L marítimo, AWB aéreo, Carta Porte u otro según el medio de transporte internacional aplicable.</div></div>
               <div class="req-tag">Obligatorio</div>
             </div>
             <div class="check-item">
               <div class="check-box done"></div>
-              <div><div class="t">Factura comercial</div><div class="d">Con Incoterm (FOB/CIF) y descripción comercial del proveedor.</div></div>
+              <div><div class="t">Factura comercial</div><div class="d">Sustento comercial de la operación con descripción detallada del producto, valores, moneda e Incoterm declarado cuando corresponda.</div></div>
               <div class="req-tag">Obligatorio</div>
             </div>
             <div class="check-item">
               <div class="check-box"></div>
-              <div><div class="t">Certificado de origen (TLC)</div><div class="d">Requerido para desgravación arancelaria por tratado.</div></div>
+              <div><div class="t">Acreditación de origen preferencial</div><div class="d">Documento o mecanismo de acreditación exigido por el acuerdo comercial aplicable para acogerse a preferencia arancelaria.</div></div>
               <div class="req-tag">Opcional TLC</div>
             </div>
             <div class="check-item">
               <div class="check-box"></div>
-              <div><div class="t">Registro / permiso VUCE</div><div class="d">DIGESA, SENASA, MTC o DIGEMID según producto restringido.</div></div>
+              <div><div class="t">Registro / permiso VUCE</div><div class="d">DIGESA, SENASA, MTC o DIGEMID según la naturaleza de la mercancía restringida.</div></div>
               <div class="req-tag">Según producto</div>
             </div>
           </div>
@@ -543,14 +561,47 @@
       <!-- TAB 9: TRAZABILIDAD Y FUENTES -->
       <div id="tab-fuentes" class="center-tab-content section-tab">
         <div class="section-head" id="fuentes">
-          <h2>Fuentes Oficiales & Trazabilidad</h2>
-          <div class="desc">Base arancelaria y portales gubernamentales del Perú.</div>
+          <h2>Fuentes Oficiales &amp; Trazabilidad de Datos</h2>
+          <div class="desc">Matriz de trazabilidad normativa, fechas de corte de dataset y portales oficiales del Perú.</div>
         </div>
-        <div class="sources">
-          <div class="source-cell"><div class="k">Base arancelaria</div><div class="v">Arancel 2022</div><div class="s">D.S. N.º 404-2021-EF</div></div>
-          <div class="source-cell"><div class="k">Nomenclatura</div><div class="v">NANDINA VII</div><div class="s">Comunidad Andina / OMA</div></div>
-          <div class="source-cell"><div class="k">Registros</div><div class="v">8,015 subpartidas</div><div class="s">Nivel nacional, 10 dígitos</div></div>
-          <div class="source-cell"><div class="k">Dataset</div><div class="v">v2022.12.31</div><div class="s">Verificación continua</div></div>
+
+        <div class="table-container" style="margin-bottom: 20px;">
+          <table class="data enterprise-table">
+            <thead>
+              <tr>
+                <th>Dato / Parámetro</th>
+                <th>Fuente Oficial</th>
+                <th>Fecha del Dato</th>
+                <th>Fecha de Consulta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Subpartidas &amp; Ad-Valorem NMF</b></td>
+                <td>SUNAT (D.S. N.º 404-2021-EF)</td>
+                <td>31/12/2022</td>
+                <td class="dynamic-query-date font-mono">31/08/2026</td>
+              </tr>
+              <tr>
+                <td><b>Alícuotas IGV &amp; IPM</b></td>
+                <td>SUNAT (Ley de IGV)</td>
+                <td>2026</td>
+                <td class="dynamic-query-date font-mono">31/08/2026</td>
+              </tr>
+              <tr>
+                <td><b>Régimen de Percepción IGV</b></td>
+                <td>SUNAT (D.L. 939 / R.S. 203-2003)</td>
+                <td>2026</td>
+                <td class="dynamic-query-date font-mono">31/08/2026</td>
+              </tr>
+              <tr>
+                <td><b>Tipo de Cambio Referencial</b></td>
+                <td>SBS (Superintendencia de Banca y Seguros)</td>
+                <td class="dynamic-query-date font-mono">31/08/2026</td>
+                <td class="dynamic-query-date font-mono">31/08/2026</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div class="link-list">

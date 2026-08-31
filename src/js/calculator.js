@@ -1,42 +1,59 @@
 /**
- * Calculadora de Liquidación de Tributos Aduaneros SUNAT
- * Implementa las fórmulas oficiales de tributación de importación en el Perú.
- * Rigor técnico: No aplica 0% de TLC automáticamente a menos que esté verificado y acreditado.
+ * Calculadora de Liquidación de Tributos y Estimación de Importación (PartidaArancelaria)
+ * Implementa las normas tributarias aduaneras de importación en el Perú.
+ * Rigor técnico: No asume 0% de TLC automáticamente; distingue Ad-Valorem Base, Preferencial y Aplicado.
  */
 
 export class TariffCalculator {
   /**
-   * Realiza la liquidación de impuestos, desgravación por TLC y costo unitario
+   * Determina la base imponible del Régimen de Percepción del IGV según el supuesto aplicable
+   */
+  static calculatePerceptionBase(cif, subtotalTributos, otrosDerechos = 0) {
+    const c = Math.max(0, parseFloat(cif) || 0);
+    const t = Math.max(0, parseFloat(subtotalTributos) || 0);
+    const o = Math.max(0, parseFloat(otrosDerechos) || 0);
+    return c + t + o;
+  }
+
+  /**
+   * Realiza la liquidación de impuestos, análisis preferencial y estimación de desembolso
    * @param {Object} params 
    * @returns {Object}
    */
   static calculate(params) {
-    const fob = parseFloat(params.fob) || 0;
-    const flete = parseFloat(params.flete) || 0;
-    const seguro = parseFloat(params.seguro) || 0;
-    const baseAdValoremPct = parseFloat(params.adValoremPct) || 0;
-    const iscPct = parseFloat(params.iscPct) || 0;
-    const tipoPercepcionPct = parseFloat(params.percepcionPct) || 3.5;
+    // Validaciones de entrada (barreras técnicas contra números negativos o valores vacíos)
+    const fob = Math.max(0, parseFloat(params.fob) || 0);
+    const flete = Math.max(0, parseFloat(params.flete) || 0);
+    const seguro = Math.max(0, parseFloat(params.seguro) || 0);
+    const adValoremBase = Math.min(100, Math.max(0, parseFloat(params.adValoremBase !== undefined ? params.adValoremBase : params.adValoremPct) || 0));
+    
+    // Tasa de percepción (0, 3.5, 5, 10)
+    const tipoPercepcionPct = Math.min(20, Math.max(0, parseFloat(params.percepcionPct) || 0));
     const paisOrigen = params.paisOrigen || 'NMF';
-    const tlcVerificado = Boolean(params.tlcVerificado || params.certOrigenDisponible);
-    const unidades = Math.max(1, parseInt(params.unidades) || 1);
-    const tipoCambio = parseFloat(params.tipoCambio) || 3.75;
-    const margenGananciaPct = parseFloat(params.margenGananciaPct) || 30;
+    const evaluarTLC = Boolean(params.evaluarTLC || params.tlcVerificado || params.certOrigenDisponible);
+    const unidades = Math.max(1, parseInt(params.unidades, 10) || 1);
+    const tipoCambio = Math.max(0.001, parseFloat(params.tipoCambio) || 3.75);
+    const margenSobreCostoPct = Math.min(1000, Math.max(0, parseFloat(params.margenGananciaPct) || 35));
 
-    // 1. Evaluación rigurosa de TLC / Desgravación Arancelaria
+    // Tratamiento de ISC y Otros Derechos (null si no está determinado)
+    const iscPct = params.iscPct !== null && params.iscPct !== undefined ? Math.max(0, parseFloat(params.iscPct)) : null;
+    const otrosDerechosUSD = params.otrosDerechos !== null && params.otrosDerechos !== undefined ? Math.max(0, parseFloat(params.otrosDerechos)) : null;
+
+    // 1. Estructura de Ad-Valorem (Base, Preferencial, Aplicado)
+    let adValoremPreferencial = null;
+    let adValoremAplicado = adValoremBase;
     let tieneTLC = false;
     let preferenciaAplicada = false;
-    let nombreTLC = 'Arancel General NMF (Tasa Estándar)';
-    let estadoTLC = 'CONFIRMADO POR BASE/FUENTE';
-    let adValoremPct = baseAdValoremPct;
-    let mensajeTLC = 'Se aplica el Arancel General NMF determinado por el Arancel de Aduanas 2022.';
+    let nombreTLC = 'Tratamiento Arancelario General (NMF)';
+    let estadoTLC = 'BASE GENERAL (NMF)';
+    let mensajeTLC = 'Se continúa el cálculo utilizando el tratamiento arancelario general, sin evaluar una preferencia comercial.';
 
-    if (paisOrigen !== 'NMF') {
+    if (paisOrigen !== 'NMF' && evaluarTLC) {
       tieneTLC = true;
       const nombresTLC = {
         'CN': 'TLC Perú - China',
         'US': 'TLC Perú - EE.UU. (APC)',
-        'EU': 'TLC Perú - Unión Europea',
+        'EU': 'Acuerdo Perú - Unión Europea',
         'CAN': 'Comunidad Andina (CAN)',
         'MX': 'Alianza del Pacífico - México',
         'JP': 'TLC Perú - Japón',
@@ -44,99 +61,102 @@ export class TariffCalculator {
       };
       nombreTLC = nombresTLC[paisOrigen] || 'Acuerdo Comercial Internacional';
 
-      if (baseAdValoremPct === 0) {
+      if (adValoremBase === 0) {
         preferenciaAplicada = true;
-        adValoremPct = 0;
-        mensajeTLC = 'La mercancía ya tributa 0% de Ad-Valorem en el Arancel General NMF.';
-        estadoTLC = 'VERIFICADO (0% BASE NMF)';
-      } else if (tlcVerificado || paisOrigen === 'CAN') {
-        preferenciaAplicada = true;
-        adValoremPct = 0; // Desgravación por TLC con Certificado de Origen
-        mensajeTLC = `Preferencia arancelaria 0% Ad-Valorem verificada y acreditada mediante el convenio ${nombreTLC}. Certificado de Origen válido.`;
-        estadoTLC = 'VERIFICADO Y APLICADO (0% TLC)';
+        adValoremPreferencial = 0;
+        adValoremAplicado = 0;
+        mensajeTLC = 'La subpartida registra 0% de Ad-Valorem en el Arancel General NMF 2022.';
+        estadoTLC = '0% BASE NMF';
       } else {
-        preferenciaAplicada = false;
-        adValoremPct = baseAdValoremPct; // Mantener arancel general NMF si no está verificado
-        mensajeTLC = `Convenio ${nombreTLC} seleccionado sin Certificado de Origen acreditado. Se aplica el Arancel General NMF (${baseAdValoremPct}%) de forma preventiva hasta presentar la Declaración/Certificado de Origen.`;
-        estadoTLC = 'PENDIENTE DE ACREDITACIÓN';
+        // En evaluación preferencial referencial
+        preferenciaAplicada = true;
+        adValoremPreferencial = 0;
+        adValoremAplicado = 0;
+        mensajeTLC = `SÍ: Se evalúa la preferencia arancelaria según el acuerdo comercial ${nombreTLC}, subpartida, regla de origen y requisitos aplicables.`;
+        estadoTLC = 'EVALUACIÓN PREFERENCIAL';
       }
+    } else if (paisOrigen !== 'NMF' && !evaluarTLC) {
+      mensajeTLC = 'NO: Se continuará el cálculo utilizando el tratamiento arancelario general, sin evaluar una preferencia comercial.';
     }
 
-    // 2. Valor CIF (Base imponible primaria)
+    // 2. Valor CIF estimado (Base para tributos)
     const valorCIF = fob + flete + seguro;
 
-    // 3. Ad-Valorem y Ahorro TLC
-    const montoAdValorem = valorCIF * (adValoremPct / 100);
-    const montoAdValoremSinTLC = valorCIF * (baseAdValoremPct / 100);
-    const ahorroUSD = preferenciaAplicada ? (montoAdValoremSinTLC - montoAdValorem) : 0;
+    // 3. Monto Ad-Valorem
+    const montoAdValorem = valorCIF * (adValoremAplicado / 100);
+    const montoAdValoremBase = valorCIF * (adValoremBase / 100);
+    const ahorroEstimadoUSD = preferenciaAplicada ? Math.max(0, montoAdValoremBase - montoAdValorem) : 0;
 
     // 4. ISC (Impuesto Selectivo al Consumo)
-    const baseISC = valorCIF + montoAdValorem;
-    const montoISC = baseISC * (iscPct / 100);
+    const montoISC = iscPct !== null ? (valorCIF + montoAdValorem) * (iscPct / 100) : 0;
 
-    // 5. Base imponible para IGV e IPM
+    // 5. Base para IGV (15.5%) e IPM (2.5%)
     const baseIGV_IPM = valorCIF + montoAdValorem + montoISC;
 
-    // 6. IGV (15.5%) e IPM (2.5%)
+    // 6. IGV (15.5%) e IPM (2.5%) calculados independientemente
     const montoIGV = baseIGV_IPM * 0.155;
     const montoIPM = baseIGV_IPM * 0.025;
-    const subtotalTributosLeyes = montoAdValorem + montoISC + montoIGV + montoIPM;
+    const subtotalTributos = montoAdValorem + montoISC + montoIGV + montoIPM;
 
-    // 7. Percepción del IGV SUNAT
-    const basePercepcion = baseIGV_IPM + montoIGV + montoIPM;
-    const montoPercepcion = basePercepcion * (tipoPercepcionPct / 100);
+    // 7. Percepción del IGV (Pago a cuenta de impuesto, no costo definitivo)
+    let montoPercepcion = 0;
+    if (tipoPercepcionPct > 0) {
+      const basePercepcion = this.calculatePerceptionBase(valorCIF, subtotalTributos, otrosDerechosUSD || 0);
+      montoPercepcion = basePercepcion * (tipoPercepcionPct / 100);
+    }
 
-    // 8. Totales finales
-    const totalTributosSUNAT = subtotalTributosLeyes + montoPercepcion;
-    const costoTotalLandedUSD = valorCIF + totalTributosSUNAT;
+    // 8. Totales (Costo Estimado vs Desembolso Total)
+    const costoEstimadoUSD = valorCIF + subtotalTributos;
+    const desembolsoTotalUSD = costoEstimadoUSD + montoPercepcion;
 
-    // 9. Costos Unitarios y Precio Sugerido en Soles (S/.)
-    const costoUnitarioUSD = costoTotalLandedUSD / unidades;
-    const costoUnitarioPEN = costoUnitarioUSD * tipoCambio;
-    const precioVentaSugeridoPEN = costoUnitarioPEN * (1 + (margenGananciaPct / 100));
+    const costoEstimadoPEN = costoEstimadoUSD * tipoCambio;
+    const desembolsoTotalPEN = desembolsoTotalUSD * tipoCambio;
 
-    // 10. Desglose explícito de Fórmulas (BASE x TASA = RESULTADO)
-    const formulas = [
-      { concepto: 'Valor CIF (USD $)', formula: `FOB ($${fob.toFixed(2)}) + Flete ($${flete.toFixed(2)}) + Seguro ($${seguro.toFixed(2)})`, resultado: `$${valorCIF.toFixed(2)}`, estado: 'CALCULADO' },
-      { concepto: 'Ad-Valorem (USD $)', formula: `CIF ($${valorCIF.toFixed(2)}) × ${adValoremPct}%`, resultado: `$${montoAdValorem.toFixed(2)}`, estado: estadoTLC },
-      { concepto: 'ISC (USD $)', formula: `(CIF + Ad-Valorem) ($${baseISC.toFixed(2)}) × ${iscPct}%`, resultado: `$${montoISC.toFixed(2)}`, estado: 'CALCULADO' },
-      { concepto: 'IGV 15.5% (USD $)', formula: `(CIF + Ad-Valorem + ISC) ($${baseIGV_IPM.toFixed(2)}) × 15.5%`, resultado: `$${montoIGV.toFixed(2)}`, estado: 'CALCULADO' },
-      { concepto: 'IPM 2.5% (USD $)', formula: `(CIF + Ad-Valorem + ISC) ($${baseIGV_IPM.toFixed(2)}) × 2.5%`, resultado: `$${montoIPM.toFixed(2)}`, estado: 'CALCULADO' },
-      { concepto: 'Percepción IGV (USD $)', formula: `Base Percepción ($${basePercepcion.toFixed(2)}) × ${tipoPercepcionPct}%`, resultado: `$${montoPercepcion.toFixed(2)}`, estado: 'CALCULADO' }
-    ];
+    // 9. Métricas Unitarias y Precio de Venta Estimado (PEN)
+    const costoUnitarioUSD = costoEstimadoUSD / unidades;
+    const costoUnitarioPEN = costoEstimadoPEN / unidades;
+    const precioVentaEstimadoPEN = costoUnitarioPEN * (1 + (margenSobreCostoPct / 100));
+    const utilidadBrutaEstimadaPEN = precioVentaEstimadoPEN - costoUnitarioPEN;
 
     return {
       fob: fob.toFixed(2),
       flete: flete.toFixed(2),
       seguro: seguro.toFixed(2),
       valorCIF: valorCIF.toFixed(2),
-      baseAdValoremPct,
-      adValoremPct,
+      adValoremBase,
+      adValoremPreferencial,
+      adValoremAplicado,
+      adValoremPct: adValoremAplicado,
       tieneTLC,
       preferenciaAplicada,
       nombreTLC,
       estadoTLC,
       mensajeTLC,
-      ahorroUSD: ahorroUSD.toFixed(2),
+      ahorroUSD: ahorroEstimadoUSD.toFixed(2),
       montoAdValorem: montoAdValorem.toFixed(2),
-      iscPct,
+      iscPct: iscPct !== null ? iscPct : 'No determinado',
       montoISC: montoISC.toFixed(2),
       montoIGV: montoIGV.toFixed(2),
       montoIPM: montoIPM.toFixed(2),
-      subtotalTributos: subtotalTributosLeyes.toFixed(2),
+      subtotalTributos: subtotalTributos.toFixed(2),
       percepcionPct: tipoPercepcionPct,
       montoPercepcion: montoPercepcion.toFixed(2),
-      totalTributosSUNAT: totalTributosSUNAT.toFixed(2),
-      costoTotalLanded: costoTotalLandedUSD.toFixed(2),
-      costoTotalLandedPEN: (costoTotalLandedUSD * tipoCambio).toFixed(2),
-      efectividadImpuestoPct: valorCIF > 0 ? ((totalTributosSUNAT / valorCIF) * 100).toFixed(1) : "0.0",
+      costoEstimadoUSD: costoEstimadoUSD.toFixed(2),
+      costoEstimadoPEN: costoEstimadoPEN.toFixed(2),
+      desembolsoTotalUSD: desembolsoTotalUSD.toFixed(2),
+      desembolsoTotalPEN: desembolsoTotalPEN.toFixed(2),
+      totalTributosSUNAT: (subtotalTributos + montoPercepcion).toFixed(2),
+      costoTotalLanded: costoEstimadoUSD.toFixed(2),
+      costoTotalLandedPEN: costoEstimadoPEN.toFixed(2),
       unidades,
       tipoCambio: tipoCambio.toFixed(3),
-      margenGananciaPct,
+      margenGananciaPct: margenSobreCostoPct,
+      margenSobreCostoPct,
       costoUnitarioUSD: costoUnitarioUSD.toFixed(2),
       costoUnitarioPEN: costoUnitarioPEN.toFixed(2),
-      precioVentaSugeridoPEN: precioVentaSugeridoPEN.toFixed(2),
-      formulas
+      precioVentaEstimadoPEN: precioVentaEstimadoPEN.toFixed(2),
+      precioVentaSugeridoPEN: precioVentaEstimadoPEN.toFixed(2),
+      utilidadBrutaEstimadaPEN: utilidadBrutaEstimadaPEN.toFixed(2)
     };
   }
 }

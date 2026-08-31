@@ -34,6 +34,16 @@ async function initializeApp() {
       state.activeItem = subpartidas[0];
     }
 
+    // Poblar dinámicamente fechas de consulta del sistema y cantidad real de subpartidas
+    const todayStr = new Date().toLocaleDateString('es-PE');
+    document.querySelectorAll('.dynamic-query-date').forEach(el => {
+      el.textContent = todayStr;
+    });
+    const catalogBadge = document.getElementById('catalog-count-badge');
+    if (catalogBadge && subpartidas.length > 0) {
+      catalogBadge.textContent = subpartidas.length.toLocaleString();
+    }
+
     initTreeView();
     initSearch();
     initCenterTabs();
@@ -832,9 +842,10 @@ function renderChecklistTab(item = state.activeItem) {
 function exportCalculatorToExcel(item, entityInfo, res) {
   if (!res) return;
   const rawCode = (item && item.codigo10) ? item.codigo10.replace(/\D/g, '') : '8517130000';
-  const fileName = `Proforma_SUNAT_${rawCode}_${new Date().toISOString().slice(0, 10)}.xls`;
-  
-  const adValoremFormula = res.preferenciaAplicada ? "0" : "=B10*B14";
+  const fileName = `Proforma_PartidaArancelaria_${rawCode}_${new Date().toISOString().slice(0, 10)}.xls`;
+  const isManual = state.isManualAdValorem ? 'Simulación Manual' : 'Oficial (Subpartida)';
+  const queryDate = new Date().toLocaleDateString('es-PE');
+  const queryTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
   const excelTemplate = `
   <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -871,72 +882,82 @@ function exportCalculatorToExcel(item, entityInfo, res) {
   <body>
     <table>
       <!-- Fila 1 -->
-      <tr><th colspan="4" class="header-title">PROFORMA DE LIQUIDACIÓN ADUANERA & COSTO LANDED (SUNAT - PERÚ)</th></tr>
+      <tr><th colspan="4" class="header-title">PROFORMA DE ESTIMACIÓN DE IMPORTACIÓN & LIQUIDACIÓN ADUANERA</th></tr>
       <!-- Fila 2 -->
-      <tr><td colspan="2"><b>Subpartida Nacional:</b> ${item ? item.codigo10 : '8517.13.00.00'}</td><td colspan="2"><b>Fecha de Emisión:</b> ${new Date().toLocaleDateString('es-PE')}</td></tr>
+      <tr><td colspan="2"><b>Subpartida Nacional:</b> ${item ? item.codigo10 : '8517.13.00.00'}</td><td colspan="2"><b>Fecha de Emisión:</b> ${queryDate} ${queryTime}</td></tr>
       <!-- Fila 3 -->
       <tr><td colspan="4"><b>Descripción Oficial:</b> ${item ? item.descripcionOficial : 'Mercancía de Importación'}</td></tr>
       <!-- Fila 4 -->
-      <tr><td colspan="2"><b>Entidad Reguladora:</b> ${entityInfo ? entityInfo.entidad_siglas : 'SUNAT'}</td><td colspan="2"><b>Trámite VUCE:</b> ${entityInfo ? entityInfo.codigo_tramite_vuce : 'No requiere'}</td></tr>
+      <tr><td colspan="2"><b>Modo de Cálculo:</b> ${isManual}</td><td colspan="2"><b>Base Arancelaria:</b> Arancel 2022 (D.S. N.º 404-2021-EF)</td></tr>
       <!-- Fila 5 -->
+      <tr><td colspan="2"><b>Entidad Reguladora:</b> ${entityInfo ? entityInfo.entidad_siglas : 'MTC / SUNAT'}</td><td colspan="2"><b>Tipo de Cambio Referencial:</b> S/ ${res.tipoCambio} (Fuente: SBS)</td></tr>
+      <!-- Fila 6 -->
       <tr><td colspan="4"></td></tr>
       
-      <!-- Fila 6 -->
-      <tr><th colspan="4" class="section-header">1. EMBARQUE INTERNACIONAL (VALOR CIF BASE)</th></tr>
       <!-- Fila 7 -->
-      <tr><td>Valor FOB</td><td class="num-usd">${res.fob}</td><td>USD $</td><td>Declarado en Factura Comercial</td></tr>
+      <tr><th colspan="4" class="section-header">1. VALOR EN ADUANA ESTIMADO (CIF)</th></tr>
       <!-- Fila 8 -->
-      <tr><td>Flete Internacional</td><td class="num-usd">${res.flete}</td><td>USD $</td><td>Conocimiento de Embarque / B/L / AWB</td></tr>
+      <tr><td>Valor FOB</td><td class="num-usd">${res.fob}</td><td>USD $</td><td>Declarado en Factura Comercial</td></tr>
       <!-- Fila 9 -->
-      <tr><td>Seguro Internacional</td><td class="num-usd">${res.seguro}</td><td>USD $</td><td>Póliza o Tabla de Seguro SUNAT</td></tr>
+      <tr><td>Flete Internacional</td><td class="num-usd">${res.flete}</td><td>USD $</td><td>Conocimiento de Embarque / B/L / AWB / Carta Porte</td></tr>
       <!-- Fila 10 -->
-      <tr class="subtotal-row"><td>VALOR CIF BASE</td><td class="num-usd" x:fmla="=B7+B8+B9">${res.valorCIF}</td><td>USD $</td><td class="formula-cell">Fórmula: FOB + FLETE + SEGURO</td></tr>
+      <tr><td>Seguro Internacional</td><td class="num-usd">${res.seguro}</td><td>USD $</td><td>Póliza de Seguro / Tabla SUNAT</td></tr>
       <!-- Fila 11 -->
-      <tr><td colspan="4"></td></tr>
-
+      <tr class="subtotal-row"><td>VALOR CIF ESTIMADO</td><td class="num-usd" x:fmla="=B8+B9+B10">${res.valorCIF}</td><td>USD $</td><td class="formula-cell">Fórmula: FOB + FLETE + SEGURO</td></tr>
       <!-- Fila 12 -->
-      <tr><th colspan="4" class="section-header">2. TRIBUTOS Y LEYES DE IMPORTACIÓN SUNAT</th></tr>
-      <!-- Fila 13 -->
-      <tr><td>Convenio Internacional (TLC)</td><td>${res.nombreTLC}</td><td colspan="2"><b>${res.estadoTLC}</b></td></tr>
-      <!-- Fila 14 -->
-      <tr><td>Arancel Ad-Valorem NMF Base (%)</td><td class="num-pct">${(res.baseAdValoremPct/100)}</td><td>% Base</td><td>Arancel General SUNAT 2022</td></tr>
-      <!-- Fila 15 -->
-      <tr><td>Arancel Ad-Valorem Aplicado (USD)</td><td class="num-usd" x:fmla="${adValoremFormula}">${res.montoAdValorem}</td><td>USD $</td><td class="formula-cell">${res.preferenciaAplicada ? '0% Desgravado por TLC' : 'Fórmula: CIF × %AdValorem'}</td></tr>
-      <!-- Fila 16 -->
-      <tr><td>ISC (Impuesto Selectivo Consumo %)</td><td class="num-pct">${(res.iscPct/100)}</td><td>% ISC</td><td>Impuesto Selectivo Consumo</td></tr>
-      <!-- Fila 17 -->
-      <tr><td>ISC (Monto USD $)</td><td class="num-usd" x:fmla="=(B10+B15)*B16">${res.montoISC}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + AdValorem) × %ISC</td></tr>
-      <!-- Fila 18 -->
-      <tr><td>IGV (Impuesto General a Ventas - 15.5%)</td><td class="num-usd" x:fmla="=(B10+B15+B17)*0.155">${res.montoIGV}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + AdValorem + ISC) × 15.5%</td></tr>
-      <!-- Fila 19 -->
-      <tr><td>IPM (Impuesto Promoción Municipal - 2.5%)</td><td class="num-usd" x:fmla="=(B10+B15+B17)*0.025">${res.montoIPM}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + AdValorem + ISC) × 2.5%</td></tr>
-      <!-- Fila 20 -->
-      <tr class="subtotal-row"><td>Subtotal Tributos de Ley</td><td class="num-usd" x:fmla="=B15+B17+B18+B19">${res.subtotalTributos}</td><td>USD $</td><td class="formula-cell">Fórmula: AdValorem + ISC + IGV + IPM</td></tr>
-      <!-- Fila 21 -->
-      <tr><td>Percepción del IGV SUNAT (%)</td><td class="num-pct">${(res.percepcionPct/100)}</td><td>% Percepción</td><td>Adelanto Percepción IGV</td></tr>
-      <!-- Fila 22 -->
-      <tr><td>Monto Percepción IGV (USD $)</td><td class="num-usd" x:fmla="=(B10+B20)*B21">${res.montoPercepcion}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + SubtotalTributos) × %Percepción</td></tr>
-      <!-- Fila 23 -->
-      <tr class="total-row"><td>TOTAL TRIBUTOS A PAGAR SUNAT</td><td class="num-usd" x:fmla="=B20+B22">${res.totalTributosSUNAT}</td><td>USD $</td><td class="formula-cell">Fórmula: SubtotalTributos + Percepción</td></tr>
-      <!-- Fila 24 -->
       <tr><td colspan="4"></td></tr>
 
+      <!-- Fila 13 -->
+      <tr><th colspan="4" class="section-header">2. TRIBUTOS DE IMPORTACIÓN (COSTO ESTIMADO)</th></tr>
+      <!-- Fila 14 -->
+      <tr><td>Convenio Internacional</td><td>${res.nombreTLC}</td><td colspan="2"><b>${res.estadoTLC}</b></td></tr>
+      <!-- Fila 15 -->
+      <tr><td>Arancel Ad-Valorem NMF Base (%)</td><td class="num-pct">${((res.adValoremBase || 0)/100)}</td><td>% Base</td><td>Arancel General SUNAT 2022</td></tr>
+      <!-- Fila 16 -->
+      <tr><td>Arancel Ad-Valorem Aplicado (%)</td><td class="num-pct">${((res.adValoremAplicado || 0)/100)}</td><td>% Aplicado</td><td>${res.preferenciaAplicada ? 'Evaluación Preferencial' : 'Tasa Base Aplicada'}</td></tr>
+      <!-- Fila 17 -->
+      <tr><td>Monto Ad-Valorem (USD $)</td><td class="num-usd" x:fmla="=B11*B16">${res.montoAdValorem}</td><td>USD $</td><td class="formula-cell">Fórmula: CIF × %AdValoremAplicado</td></tr>
+      <!-- Fila 18 -->
+      <tr><td>ISC (Impuesto Selectivo Consumo)</td><td class="num-usd">${res.montoISC}</td><td>USD $</td><td>${res.iscPct !== 'No determinado' ? `Tasa: ${res.iscPct}%` : 'No determinado'}</td></tr>
+      <!-- Fila 19 -->
+      <tr><td>IGV (Impuesto General a Ventas - 15.5%)</td><td class="num-usd" x:fmla="=(B11+B17+B18)*0.155">${res.montoIGV}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + AdValorem + ISC) × 15.5%</td></tr>
+      <!-- Fila 20 -->
+      <tr><td>IPM (Impuesto Promoción Municipal - 2.5%)</td><td class="num-usd" x:fmla="=(B11+B17+B18)*0.025">${res.montoIPM}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + AdValorem + ISC) × 2.5%</td></tr>
+      <!-- Fila 21 -->
+      <tr class="subtotal-row"><td>Subtotal Tributos (Costo Estimado Importación)</td><td class="num-usd" x:fmla="=B17+B18+B19+B20">${res.subtotalTributos}</td><td>USD $</td><td class="formula-cell">Fórmula: AdValorem + ISC + IGV + IPM</td></tr>
+      <!-- Fila 22 -->
+      <tr><td colspan="4"></td></tr>
+
+      <!-- Fila 23 -->
+      <tr><th colspan="4" class="section-header">3. PAGO A CUENTA / RÉGIMEN DE PERCEPCIÓN IGV</th></tr>
+      <!-- Fila 24 -->
+      <tr><td>Percepción del IGV (%)</td><td class="num-pct">${((res.percepcionPct || 0)/100)}</td><td>% Percepción</td><td>Supuesto normativo seleccionado</td></tr>
       <!-- Fila 25 -->
-      <tr><th colspan="4" class="section-header">3. ESTRUCTURA DE COSTOS & RENTABILIDAD EN SOLES (PEN)</th></tr>
+      <tr><td>Monto Percepción IGV (USD $)</td><td class="num-usd" x:fmla="=(B11+B21)*B24">${res.montoPercepcion}</td><td>USD $</td><td class="formula-cell">Fórmula: (CIF + SubtotalTributos) × %Percepción</td></tr>
       <!-- Fila 26 -->
-      <tr><td>Costo Landed Total (CIF + Tributos)</td><td class="num-usd" x:fmla="=B10+B23">${res.costoTotalLanded}</td><td>USD $</td><td class="formula-cell">Fórmula: CIF + TotalTributos</td></tr>
+      <tr class="total-row"><td>DESEMBOLSO TOTAL ESTIMADO (USD $)</td><td class="num-usd" x:fmla="=B11+B21+B25">${res.desembolsoTotalUSD}</td><td>USD $</td><td class="formula-cell">Fórmula: CIF + Tributos + Percepción</td></tr>
       <!-- Fila 27 -->
-      <tr><td>Unidades Importadas</td><td align="right">${res.unidades}</td><td>Unidades</td><td>Unidades físicas nacionalizadas</td></tr>
+      <tr><td colspan="4"></td></tr>
+
       <!-- Fila 28 -->
-      <tr><td>Costo Unitario Nacionalizado (USD)</td><td class="num-usd" x:fmla="=B26/B27">${res.costoUnitarioUSD}</td><td>USD $ / u</td><td class="formula-cell">Fórmula: CostoLanded / Unidades</td></tr>
+      <tr><th colspan="4" class="section-header">4. COMERCIALIZACIÓN & RENTABILIDAD EN SOLES (PEN)</th></tr>
       <!-- Fila 29 -->
-      <tr><td>Tipo de Cambio Oficial SUNAT / SBS</td><td class="num-rate">${res.tipoCambio}</td><td>S/. PEN</td><td>Preserva 3 decimales oficiales</td></tr>
+      <tr><td>Desembolso Total Estimado (PEN)</td><td class="num-pen" x:fmla="=B26*B32">${res.desembolsoTotalPEN}</td><td>S/ PEN</td><td>Convertido a Tipo de Cambio SBS</td></tr>
       <!-- Fila 30 -->
-      <tr class="subtotal-row"><td>Costo Unitario Nacionalizado (PEN)</td><td class="num-pen" x:fmla="=B28*B29">${res.costoUnitarioPEN}</td><td>S/. PEN / u</td><td class="formula-cell">Fórmula: CostoUSD × TipoCambio</td></tr>
+      <tr><td>Unidades a Importar</td><td align="right">${res.unidades}</td><td>Unidades</td><td>Unidades físicas de la operación</td></tr>
       <!-- Fila 31 -->
-      <tr><td>Margen de Ganancia Deseado (%)</td><td class="num-pct">${(res.margenGananciaPct/100)}</td><td>% Margen</td><td>Margen comercial sobre costo</td></tr>
+      <tr><td>Costo Unitario de Importación (PEN)</td><td class="num-pen" x:fmla="=(B11+B21)*B32/B30">${res.costoUnitarioPEN}</td><td>S/ PEN / u</td><td class="formula-cell">Fórmula: CostoEstimadoPEN / Unidades</td></tr>
       <!-- Fila 32 -->
-      <tr class="total-row"><td>PRECIO DE VENTA SUGERIDO (PEN)</td><td class="num-pen" x:fmla="=B30*(1+B31)">${res.precioVentaSugeridoPEN}</td><td>S/. PEN / u</td><td class="formula-cell">Fórmula: CostoPEN × (1 + %Margen)</td></tr>
+      <tr><td>Tipo de Cambio SBS</td><td class="num-rate">${res.tipoCambio}</td><td>S/ PEN</td><td>Preserva 3 decimales referenciales</td></tr>
+      <!-- Fila 33 -->
+      <tr><td>Margen sobre Costo (%)</td><td class="num-pct">${((res.margenSobreCostoPct || 35)/100)}</td><td>% Margen</td><td>Margen comercial aplicado sobre costo</td></tr>
+      <!-- Fila 34 -->
+      <tr class="total-row"><td>PRECIO DE VENTA ESTIMADO (PEN)</td><td class="num-pen" x:fmla="=B31*(1+B33)">${res.precioVentaEstimadoPEN}</td><td>S/ PEN / u</td><td class="formula-cell">Fórmula: CostoUnitarioPEN × (1 + %Margen)</td></tr>
+      <!-- Fila 35 -->
+      <tr><td colspan="4"></td></tr>
+
+      <!-- Fila 36 -->
+      <tr><td colspan="4" style="font-size:9pt; color:#475569; font-style:italic;">⚠️ <b>Aviso Legal:</b> Simulación referencial emitida por PartidaArancelaria. No constituye determinación oficial de tributos, clasificación arancelaria ni autorización de importación. Verifique información en fuentes oficiales (SUNAT / MINCETUR / VUCE).</td></tr>
     </table>
   </body>
   </html>`;
@@ -1271,13 +1292,13 @@ function initInPageCifCalculator() {
       btnCertNo.classList.remove('selected');
       isCertYes = true;
 
-      // Al responder SÍ: cambiar automáticamente Ad-Valorem a 0%
+      // Al responder SÍ: activar evaluación preferencial
       activeAdv = 0;
       advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === '0'));
 
       if (alertBanner) {
         alertBanner.className = 'alert-banner ok';
-        alertBanner.innerHTML = '✓ Desgrava el Ad&nbsp;Valorem a 0% por convenio verificado. Sin certificado, se aplicaría la tasa estándar (6% u 11%) más una alerta de penalización aduanera.';
+        alertBanner.innerHTML = 'SÍ: Se evalúa la preferencia arancelaria según el acuerdo comercial, subpartida, regla de origen y requisitos aplicables.';
       }
       recalculateInPage();
     });
@@ -1287,14 +1308,14 @@ function initInPageCifCalculator() {
       btnCertYes.classList.remove('selected');
       isCertYes = false;
 
-      // Al responder NO: restaurar automáticamente la tasa Ad-Valorem estándar (6% u 11%)
+      // Al responder NO: continuar con el tratamiento arancelario general
       const baseRate = state.activeItem && state.activeItem.adValorem > 0 ? String(state.activeItem.adValorem) : '6';
       activeAdv = parseFloat(baseRate);
       advOpts.forEach(o => o.classList.toggle('selected', o.dataset.inpageAdv === baseRate));
 
       if (alertBanner) {
         alertBanner.className = 'alert-banner';
-        alertBanner.innerHTML = '⚠️ <strong>ALERTA PENALIZACIÓN ADUANERA:</strong> Al declarar [ NO ] en certificado de origen, la SUNAT aplicará la tasa de arancel estándar a pesar del TLC.';
+        alertBanner.innerHTML = 'NO: Se continuará el cálculo utilizando el tratamiento arancelario general, sin evaluar una preferencia comercial.';
       }
       recalculateInPage();
     });
@@ -1469,13 +1490,13 @@ function calculateAndRender() {
 
       ${paisOrigen !== 'NMF' && !res.preferenciaAplicada ? `
         <div style="padding: 10px 12px; margin: 8px 0; background: #fffbe0; border: 1.5px solid #f59e0b; border-radius: 6px; color: #92400e; font-size: 11px; line-height: 1.4;">
-          <strong>⚠️ ALERTA PENALIZACIÓN ADUANERA:</strong> Al declarar <strong>[ NO ]</strong> en la posesión del Certificado de Origen emitido en origen, la SUNAT penalizará cobrando el <strong>Arancel Estándar NMF (${res.baseAdValoremPct}%)</strong> a pesar de existir un TLC vigente con ${res.nombreTLC}.
+          <strong>ℹ️ TRATAMIENTO NMF:</strong> NO: Se continuará el cálculo utilizando el tratamiento arancelario general (${res.baseAdValoremPct}%), sin evaluar una preferencia comercial para ${res.nombreTLC}.
         </div>
       ` : ''}
 
       ${paisOrigen !== 'NMF' && res.preferenciaAplicada ? `
         <div style="padding: 10px 12px; margin: 8px 0; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 6px; color: #065f46; font-size: 11px; line-height: 1.4;">
-          <strong>✅ CONVENIO VERIFICADO:</strong> Declarado <strong>[ SÍ ]</strong> con Certificado de Origen. Ad-Valorem desgravado a 0% generando un ahorro arancelario de <strong>$${res.ahorroUSD} USD</strong>.
+          <strong>SÍ:</strong> Se evalúa la preferencia arancelaria según el acuerdo comercial ${res.nombreTLC}, subpartida, regla de origen y requisitos aplicables.
         </div>
       ` : ''}
 
@@ -1765,8 +1786,8 @@ function renderDynamicRgiTab(item = state.activeItem) {
 
   if (!item) {
     container.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--line); border-radius: var(--radius); font-family: var(--font-mono); font-size: 12px;">
-        🔍 Selecciona o busca una subpartida para consultar su <strong>Análisis Técnico RGI</strong>.
+      <div style="padding: 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px; font-family: var(--font-mono); font-size: 12px;">
+        🔍 Selecciona o busca una subpartida para consultar su <strong>Análisis Técnico Orientativo RGI</strong>.
       </div>
     `;
     return;
@@ -1774,28 +1795,40 @@ function renderDynamicRgiTab(item = state.activeItem) {
 
   const code = item.codigo10 || '';
   const desc = state.searchEngine.getDisplayDescription(item);
-  let ruleTitle = 'Regla General Interpretativa 1 & 6 (Texto de la Subpartida)';
-  let rationaleText = `Clasificación fundamentada bajo las RGI 1 y 6 del Arancel de Aduanas SUNAT 2022. La mercancía se determina por el texto expreso de la subpartida nacional a 10 dígitos ${code}.`;
-  let decisionFactor = 'Denominación Específica en la Nomenclatura NANDINA';
+  let ruleTitle = 'RGI 1 & 6 (Texto de la Subpartida Nacional)';
+  let rationaleText = `Clasificación orientativa fundamentada bajo las Reglas Generales Interpretativas 1 y 6 del Sistema Armonizado. La mercancía se determina primeramente por el texto expreso de la partida y la subpartida nacional a 10 dígitos ${code}.`;
+  let decisionFactor = 'Texto expreso de la subpartida a 10 dígitos en la Nomenclatura NANDINA 2022';
+  let rgiSequence = 'RGI 1 ➔ RGI 6';
 
   if (code.startsWith('8517') || code.startsWith('8471') || code.startsWith('9504') || code.startsWith('8703')) {
-    ruleTitle = 'Regla General Interpretativa 1, 3a & 6 (Especificidad Técnica de la Función)';
-    rationaleText = `Por aplicación de la RGI 3a, la partida con descripción técnica más específica (${item.partida4}) prevalece sobre partidas genéricas. La subpartida nacional a 10 dígitos se determina por la RGI 6.`;
-    decisionFactor = 'Función Principal y Especificidad de Uso Técnico';
+    ruleTitle = 'RGI 1, 3a & 6 (Especificidad Técnica de la Función)';
+    rationaleText = `Por aplicación de la RGI 3a, la partida con descripción técnica más específica (${item.partida4}) prevalece sobre partidas de alcance general. La subpartida nacional se determina por la RGI 6.`;
+    decisionFactor = 'Función principal y especificidad de uso técnico';
+    rgiSequence = 'RGI 1 ➔ RGI 3(a) ➔ RGI 6';
   } else if (code.startsWith('61') || code.startsWith('62') || code.startsWith('64') || code.startsWith('39') || code.startsWith('73')) {
-    ruleTitle = 'Regla General Interpretativa 3b (Carácter Esencial & Materia Predominante)';
-    rationaleText = `Clasificación asignada bajo la RGI 3b atendiendo a la materia constitutiva o material que le otorga el carácter esencial al producto en peso o superficie.`;
-    decisionFactor = 'Composición del Material Constitutivo Predominante';
+    ruleTitle = 'RGI 3b (Carácter Esencial Multifactorial)';
+    rationaleText = `En mercancías compuestas o juegos/surtidos, la RGI 3b determina la clasificación evaluando los factores de carácter esencial (función, valor, peso, naturaleza y uso principal del producto).`;
+    decisionFactor = 'Evaluación multifactorial de carácter esencial (función, valor, peso y naturaleza)';
+    rgiSequence = 'RGI 1 ➔ RGI 2 ➔ RGI 3(b) ➔ RGI 6';
   }
 
   container.innerHTML = `
-    <div class="rgi-card" style="border-color: var(--brass);">
-      <div class="rgi-question">Análisis Técnico RGI para ${code}</div>
-      <div class="rgi-h">${ruleTitle}</div>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px;">${rationaleText}</p>
-      <div style="padding: 10px 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); font-size: 11px; font-family: var(--font-mono);">
-        <strong style="color: var(--text-faint); text-transform: uppercase;">Criterio Técnico:</strong>
-        <span style="color: var(--brass); font-weight: 600; margin-left: 6px;">${decisionFactor}</span>
+    <div class="rgi-card" style="border-left: 4px solid var(--accent-gold); padding: 16px; background: var(--bg-hover); border-radius: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-gold); font-weight: 700;">Análisis Técnico Orientativo para ${code}</span>
+        <span class="status-badge status-orientative" style="font-size: 10px;">${rgiSequence}</span>
+      </div>
+      <div class="rgi-h" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${ruleTitle}</div>
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">${rationaleText}</p>
+      
+      <div style="padding: 10px 12px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 6px; font-size: 11px; margin-bottom: 10px;">
+        <strong style="color: var(--text-faint); text-transform: uppercase; font-size: 10px;">Secuencia de Evaluación RGI:</strong><br>
+        <span style="color: var(--accent-blue); font-family: var(--font-mono); display: inline-block; margin-top: 4px;">RGI 1 ➔ RGI 2 ➔ RGI 3 (3a / 3b / 3c) ➔ RGI 4 ➔ RGI 5 ➔ RGI 6</span>
+      </div>
+
+      <div style="padding: 10px 12px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 6px; font-size: 11px;">
+        <strong style="color: var(--text-faint); text-transform: uppercase; font-size: 10px;">Criterio Evaluado:</strong><br>
+        <span style="color: var(--accent-gold); font-weight: 600; display: inline-block; margin-top: 4px;">${decisionFactor}</span>
       </div>
     </div>
   `;
