@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-BTmX5-TG.js"></script>
+  <script type="module" crossorigin src="/assets/index-CGbNSMYi.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-xmmFTapy.css">
 </head>
 <body class="theme-dark">
@@ -703,6 +703,19 @@
 <footer>
   PartidaArancelaria — herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.
 </footer>
+
+  <!-- MODAL: Panel de Subpartidas Guardadas / Favoritos -->
+  <div id="modal-favorites" class="modal-backdrop hidden">
+    <div class="modal-workbench modal-md">
+      <button id="btn-close-favorites-modal" class="modal-close-btn">✕</button>
+      <h2>⭐ Mis Subpartidas Guardadas (Favoritos)</h2>
+      <p class="modal-subtitle">Acceso directo a tus partidas arancelarias de consulta frecuente.</p>
+      
+      <div id="favorites-list-container" style="margin-top: 18px; display: grid; gap: 10px; max-height: 420px; overflow-y: auto;">
+        <!-- Renderizado dinámicamente -->
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: Comparador Lado a Lado -->
   <div id="modal-comparator" class="modal-backdrop hidden">

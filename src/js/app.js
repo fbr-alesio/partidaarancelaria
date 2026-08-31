@@ -2213,33 +2213,126 @@ function initRecentSearches() {
   }
 
   function renderRecents() {
-    const recents = getRecents().slice(0, 2);
-    if (recents.length === 0) {
-      wrap.classList.add('hidden');
-      return;
-    }
-    wrap.classList.remove('hidden');
-    container.innerHTML = recents.map(code => `
-      <div class="recent-chip" data-code="${code}">${code}</div>
-    `).join('');
+    const recents = getRecents().slice(0, 5);
+    // Eliminar el contenedor flotante superior manteniendo las búsquedas dentro del desplegable del buscador
+    if (wrap) wrap.classList.add('hidden');
+    
+    // Integración estilo Chrome Omnibox en el desplegable de búsqueda
+    const mainSearchInput = document.getElementById('main-search-input');
+    const autocompleteContainer = document.getElementById('autocomplete-suggestions');
 
-    container.querySelectorAll('.recent-chip').forEach(el => {
-      el.addEventListener('click', () => {
-        const code = el.dataset.code;
-        const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
-        if (target) {
-          state.activeItem = target;
-          const mainSearchInput = document.getElementById('main-search-input');
-          if (mainSearchInput) mainSearchInput.value = code;
-          updateActiveItemPanel(target);
-          renderSearchResults();
+    if (mainSearchInput && autocompleteContainer) {
+      mainSearchInput.addEventListener('focus', () => {
+        if (!mainSearchInput.value.trim() && recents.length > 0) {
+          autocompleteContainer.innerHTML = `
+            <div style="padding: 8px 14px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--brass); background: var(--panel-3); border-bottom: 1px solid var(--line); font-weight: 700;">
+              🕒 BÚSQUEDAS RECIENTES (HISTORIAL OMNIBOX)
+            </div>
+            ${recents.map(code => {
+              const item = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+              const desc = item ? state.searchEngine.getDisplayDescription(item) : 'Subpartida aduanera consultada recientemente';
+              return `
+                <div class="recent-autocomplete-item" data-code="${code}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
+                  <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+                    <span style="font-size: 14px; color: var(--brass);">🕒</span>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                      <span class="font-mono" style="font-weight: 700; color: var(--text); font-size: 13px;">${code}</span>
+                      <small style="display: block; color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis;">${desc}</small>
+                    </div>
+                  </div>
+                  <span style="font-size: 11px; color: var(--text-faint); white-space: nowrap;">Reciente ↵</span>
+                </div>
+              `;
+            }).join('')}
+          `;
+          autocompleteContainer.classList.remove('hidden');
+
+          autocompleteContainer.querySelectorAll('.recent-autocomplete-item').forEach(el => {
+            el.addEventListener('click', () => {
+              const code = el.dataset.code;
+              mainSearchInput.value = code;
+              autocompleteContainer.classList.add('hidden');
+              const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+              if (target) {
+                state.activeItem = target;
+                updateActiveItemPanel(target);
+                renderSearchResults();
+                showToastNotification(`Abriendo reciente ${code}`);
+              }
+            });
+          });
         }
       });
-    });
+    }
   }
 
   window.addRecentItemToHistory = addRecent;
   renderRecents();
+}
+
+function renderFavoritesModal() {
+  const modal = document.getElementById('modal-favorites');
+  const container = document.getElementById('favorites-list-container');
+  if (!container || !modal) return;
+
+  const favCodes = state.favorites || [];
+  if (favCodes.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--text-faint);">
+        <div style="font-size: 32px; margin-bottom: 8px;">⭐</div>
+        <p style="font-size: 14px; font-weight: 600; color: var(--text);">No tienes subpartidas guardadas</p>
+        <p style="font-size: 12px; margin-top: 4px;">Haz clic en el botón ⭐ Guardar en cualquier subpartida para agregarla a tus favoritos.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const items = favCodes.map(code => {
+    return state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
+  }).filter(Boolean);
+
+  container.innerHTML = items.map(item => {
+    const entityInfo = state.searchEngine.resolveEntity(item);
+    return `
+      <div class="fav-modal-card" data-code="${item.codigo10}" style="padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; transition: all 0.15s ease;">
+        <div style="flex: 1; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 14px;">${item.codigo10}</span>
+            <span class="adv-badge adv-${item.adValorem}" style="font-size: 10px;">Ad-Valorem ${item.adValorem}%</span>
+            <span class="status-badge ${entityInfo.badge_class}" style="font-size: 9.5px; padding: 1px 6px;">${entityInfo.badge_icon} ${entityInfo.entidad_siglas}</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${state.searchEngine.getDisplayDescription(item)}</div>
+        </div>
+        <button class="btn-mini-icon btn-remove-fav" data-code="${item.codigo10}" title="Quitar de guardados" style="padding: 6px; font-size: 14px; color: var(--seal);">🗑️</button>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.fav-modal-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-remove-fav')) return;
+      const code = card.dataset.code;
+      const match = state.dataset.subpartidas.find(s => s.codigo10 === code);
+      if (match) {
+        state.activeItem = match;
+        const mainInput = document.getElementById('main-search-input');
+        if (mainInput) mainInput.value = match.codigo10;
+        updateActiveItemPanel(match);
+        renderSearchResults();
+        modal.classList.add('hidden');
+        showToastNotification(`Abriendo subpartida guardada ${match.codigo10}`);
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-remove-fav').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const code = btn.dataset.code;
+      toggleFavorite(code);
+      renderFavoritesModal();
+    });
+  });
 }
 
 function initShareableLink() {
@@ -2286,6 +2379,23 @@ function initEntityFilters() {
 }
 
 function initWorkspaceActions() {
+  // Modal de Favoritos
+  const btnFavorites = document.getElementById('btn-favorites');
+  const btnCloseFavModal = document.getElementById('btn-close-favorites-modal');
+  const modalFav = document.getElementById('modal-favorites');
+
+  if (btnFavorites && modalFav) {
+    btnFavorites.addEventListener('click', () => {
+      renderFavoritesModal();
+      modalFav.classList.remove('hidden');
+    });
+  }
+  if (btnCloseFavModal && modalFav) {
+    btnCloseFavModal.addEventListener('click', () => {
+      modalFav.classList.add('hidden');
+    });
+  }
+
   // 1. Botones del Icon Rail
   const railBtns = document.querySelectorAll('.icon-rail .rail-btn');
   railBtns.forEach((btn, index) => {
@@ -2298,12 +2408,14 @@ function initWorkspaceActions() {
         const input = document.getElementById('main-search-input');
         if (input) { input.focus(); input.select(); }
       } else if (title.includes('Favoritos') || index === 1) {
-        const btnFav = document.getElementById('btn-favorites');
-        if (btnFav) btnFav.click();
+        if (modalFav) {
+          renderFavoritesModal();
+          modalFav.classList.remove('hidden');
+        }
       } else if (title.includes('Recientes') || index === 2) {
-        const recWrap = document.getElementById('recent-searches-wrap');
-        if (recWrap) recWrap.classList.toggle('hidden');
-        showToastNotification('🕒 Mostrando historial de búsquedas recientes');
+        const input = document.getElementById('main-search-input');
+        if (input) { input.focus(); input.select(); }
+        showToastNotification('🕒 Enfocando historial de búsquedas en la barra inteligente');
       } else if (title.includes('Calculadora') || index === 3) {
         const modalCalc = document.getElementById('modal-calc');
         if (modalCalc) modalCalc.classList.remove('hidden');
