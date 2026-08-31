@@ -99,17 +99,17 @@
 .seal .p { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--brass); }
 .seal .l { font-family: var(--font-mono); font-size: 7.5px; color: var(--brass-soft); text-transform: uppercase; }
 
-/* ---------- PANEL POP-OVER COMPACTO Y PRECISO DE FAVORITOS (FONDO SÓLIDO SIN TRANSPARENCIA) ---------- */
+/* ---------- PANEL POP-OVER COMPACTO Y PRECISO DE FAVORITOS (MODO CLARO Y OSCURO) ---------- */
 .side-panel-drawer {
   position: absolute;
   top: 60px;
   right: 20px;
   width: 340px;
   max-height: 460px;
-  background: #121D2E !important;
-  border: 1px solid var(--brass-soft) !important;
+  background: var(--panel) !important;
+  border: 1.5px solid var(--brass) !important;
   border-radius: 8px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+  box-shadow: var(--shadow-lg);
   z-index: 990;
   display: flex;
   flex-direction: column;
@@ -126,7 +126,7 @@
   justify-content: space-between;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
-  background: #17263B !important;
+  background: var(--panel-2) !important;
 }
 
 .inner-tabs { display: flex; gap: 2px; margin: 22px 0 18px; border-bottom: 1px solid var(--line); overflow-x: auto; }
