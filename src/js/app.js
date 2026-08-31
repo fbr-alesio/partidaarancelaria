@@ -326,6 +326,14 @@ function renderSearchResults() {
   const entityVal = activeEntityChip ? activeEntityChip.dataset.entityVal : '';
 
   let results = [];
+  // Activar y restaurar el panel de resultados al buscar
+  if (query.trim()) {
+    const tabGeneral = document.querySelector('.center-tab[data-centertab="tab-general"]');
+    if (tabGeneral && !tabGeneral.classList.contains('active')) {
+      tabGeneral.click();
+    }
+  }
+
   if (state.activeCapitulo) {
     results = state.searchEngine.search({ capitulo: state.activeCapitulo, adValorem });
   } else if (state.activeSeccion) {

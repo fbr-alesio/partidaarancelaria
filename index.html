@@ -633,40 +633,19 @@
 
     </main>
 
-    <!-- RAIL DERECHO: Dock Anclado Permanente (Calculadora CIF + Entidad Controladora + Glosario) -->
+    <!-- RAIL DERECHO: Dock Anclado Permanente (Entidad Controladora + Acuerdos Comerciales + Glosario) -->
     <aside class="rail right dock panel-right-tech">
       
       <div class="dock-head">
         <span class="dot"></span>
-        <h3>Calculadora CIF</h3>
-        <span>Anclada</span>
+        <h3>Panel Técnico &amp; Normativo</h3>
+        <span>Anclado</span>
         <span class="dock-collapse" title="Colapsar panel">»</span>
       </div>
 
       <div class="dock-body">
         
-        <!-- Calculadora CIF Integrada -->
-        <div class="dfield"><label>Valor FOB (USD)</label><input type="number" id="dock-fob-val" value="1000.00" step="0.01"></div>
-        <div class="dfield"><label>Flete + seguro (USD)</label><input type="number" id="dock-flete-val" value="170.00" step="0.01"></div>
-        <div class="dfield"><label>Unidades a importar</label><input type="number" id="dock-unidades-val" value="50" min="1"></div>
-        <div class="dfield"><label>Certificado de origen</label>
-          <div class="dtoggle">
-            <div class="selected" id="dock-cert-yes">SÍ (TLC)</div>
-            <div id="dock-cert-no">NO (NMF)</div>
-          </div>
-        </div>
-        <div class="dfield"><label>Margen deseado (%)</label><input type="number" id="dock-margen-val" value="30" min="0"></div>
-
-        <div class="dock-result">
-          <div class="k">Costo total nacionalizado</div>
-          <div class="v" id="dock-costo-total-pen">S/. 5,487.90</div>
-          <div class="dline"><span>Costo / unidad</span><b id="dock-costo-unitario-pen">S/. 109.76</b></div>
-          <div class="dline"><span>Venta sugerida</span><b id="dock-venta-sugerida-pen">S/. 142.69</b></div>
-          <div class="dline"><span>Utilidad / unidad</span><b id="dock-utilidad-unitario-pen">S/. 32.93</b></div>
-        </div>
-        <div class="dock-cta" id="dock-btn-export-pdf">📄 Exportar Cotización (PDF)</div>
-
-        <div class="rail-title" style="margin-top: 24px;">Entidad controladora <span>🛡</span></div>
+        <div class="rail-title" style="margin-top: 10px;">Entidad controladora <span>🛡</span></div>
         <div class="control-status-box" id="tech-control-box" style="margin-bottom: 16px;">
           <span class="control-entity-tag" id="tech-entity-name">MTC (Telecomunicaciones)</span>
           <p class="control-desc" id="tech-restriction-desc">Requiere Certificado de Homologación previo al despacho aduanero.</p>
