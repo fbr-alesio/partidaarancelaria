@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-CGbNSMYi.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-xmmFTapy.css">
+  <script type="module" crossorigin src="/assets/index-Dk0UecIx.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-2SFbtR5k.css">
 </head>
 <body class="theme-dark">
 
@@ -704,18 +704,19 @@
   PartidaArancelaria — herramienta independiente de apoyo a comercio exterior. No pertenece a SUNAT, MINCETUR ni VUCE.
 </footer>
 
-  <!-- MODAL: Panel de Subpartidas Guardadas / Favoritos -->
-  <div id="modal-favorites" class="modal-backdrop hidden">
-    <div class="modal-workbench modal-md">
-      <button id="btn-close-favorites-modal" class="modal-close-btn">✕</button>
-      <h2>⭐ Mis Subpartidas Guardadas (Favoritos)</h2>
-      <p class="modal-subtitle">Acceso directo a tus partidas arancelarias de consulta frecuente.</p>
-      
-      <div id="favorites-list-container" style="margin-top: 18px; display: grid; gap: 10px; max-height: 420px; overflow-y: auto;">
-        <!-- Renderizado dinámicamente -->
+  <!-- PANEL LATERAL (SIDE PANEL DRAWER ESTILO CHROME): Favoritos -->
+  <aside id="drawer-favorites" class="side-panel-drawer hidden">
+    <div class="side-panel-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--brass); font-size: 16px;">⭐</span>
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--text);">Panel Lateral de Favoritos</h3>
       </div>
+      <button id="btn-close-favorites-drawer" class="btn-mini-icon" style="font-size: 16px; cursor: pointer;">✕</button>
     </div>
-  </div>
+    <div id="favorites-drawer-container" style="padding: 14px; display: grid; gap: 10px; overflow-y: auto; flex: 1;">
+      <!-- Renderizado dinámicamente -->
+    </div>
+  </aside>
 
   <!-- MODAL: Comparador Lado a Lado -->
   <div id="modal-comparator" class="modal-backdrop hidden">

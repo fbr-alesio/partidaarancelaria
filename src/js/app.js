@@ -671,6 +671,9 @@ function updateActiveItemPanel(item) {
   renderChecklistTab(item);
   syncCalculatorWithActiveItem(item);
   if (window.addRecentItemToHistory) window.addRecentItemToHistory(item);
+  if (window.TabManager && window.TabManager.updateActiveTabCode) {
+    window.TabManager.updateActiveTabCode(item.codigo10);
+  }
 
   // Mantener/regresar siempre al panel superior (Hero Card / Workbench) para la mejor experiencia de búsqueda
   const topPanel = document.querySelector('.workbench') || document.getElementById('tab-general') || document.querySelector('header.topbar');
@@ -2270,18 +2273,18 @@ function initRecentSearches() {
   renderRecents();
 }
 
-function renderFavoritesModal() {
-  const modal = document.getElementById('modal-favorites');
-  const container = document.getElementById('favorites-list-container');
-  if (!container || !modal) return;
+function renderFavoritesDrawer() {
+  const drawer = document.getElementById('drawer-favorites');
+  const container = document.getElementById('favorites-drawer-container');
+  if (!container || !drawer) return;
 
   const favCodes = state.favorites || [];
   if (favCodes.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px 20px; color: var(--text-faint);">
+      <div style="text-align: center; padding: 40px 16px; color: var(--text-faint);">
         <div style="font-size: 32px; margin-bottom: 8px;">⭐</div>
-        <p style="font-size: 14px; font-weight: 600; color: var(--text);">No tienes subpartidas guardadas</p>
-        <p style="font-size: 12px; margin-top: 4px;">Haz clic en el botón ⭐ Guardar en cualquier subpartida para agregarla a tus favoritos.</p>
+        <p style="font-size: 13px; font-weight: 600; color: var(--text);">No tienes subpartidas guardadas</p>
+        <p style="font-size: 11px; margin-top: 4px; line-height: 1.5;">Haz clic en el botón ⭐ Guardar en cualquier subpartida para agregarla a tu panel de favoritos.</p>
       </div>
     `;
     return;
@@ -2294,21 +2297,21 @@ function renderFavoritesModal() {
   container.innerHTML = items.map(item => {
     const entityInfo = state.searchEngine.resolveEntity(item);
     return `
-      <div class="fav-modal-card" data-code="${item.codigo10}" style="padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; transition: all 0.15s ease;">
+      <div class="fav-drawer-card" data-code="${item.codigo10}" style="padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.15s ease;">
         <div style="flex: 1; overflow: hidden;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 14px;">${item.codigo10}</span>
-            <span class="adv-badge adv-${item.adValorem}" style="font-size: 10px;">Ad-Valorem ${item.adValorem}%</span>
-            <span class="status-badge ${entityInfo.badge_class}" style="font-size: 9.5px; padding: 1px 6px;">${entityInfo.badge_icon} ${entityInfo.entidad_siglas}</span>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
+            <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 13px;">${item.codigo10}</span>
+            <span class="adv-badge adv-${item.adValorem}" style="font-size: 9.5px; padding: 1px 5px;">${item.adValorem}%</span>
+            <span class="status-badge ${entityInfo.badge_class}" style="font-size: 9px; padding: 1px 5px;">${entityInfo.badge_icon} ${entityInfo.entidad_siglas}</span>
           </div>
-          <div style="font-size: 12px; color: var(--text); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${state.searchEngine.getDisplayDescription(item)}</div>
+          <div style="font-size: 11.5px; color: var(--text); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${state.searchEngine.getDisplayDescription(item)}</div>
         </div>
-        <button class="btn-mini-icon btn-remove-fav" data-code="${item.codigo10}" title="Quitar de guardados" style="padding: 6px; font-size: 14px; color: var(--seal);">🗑️</button>
+        <button class="btn-mini-icon btn-remove-fav" data-code="${item.codigo10}" title="Quitar de guardados" style="padding: 4px 6px; font-size: 13px; color: var(--seal); background: transparent; border: none; cursor: pointer;">🗑️</button>
       </div>
     `;
   }).join('');
 
-  container.querySelectorAll('.fav-modal-card').forEach(card => {
+  container.querySelectorAll('.fav-drawer-card').forEach(card => {
     card.addEventListener('click', (e) => {
       if (e.target.closest('.btn-remove-fav')) return;
       const code = card.dataset.code;
@@ -2319,7 +2322,6 @@ function renderFavoritesModal() {
         if (mainInput) mainInput.value = match.codigo10;
         updateActiveItemPanel(match);
         renderSearchResults();
-        modal.classList.add('hidden');
         showToastNotification(`Abriendo subpartida guardada ${match.codigo10}`);
       }
     });
@@ -2330,7 +2332,7 @@ function renderFavoritesModal() {
       e.stopPropagation();
       const code = btn.dataset.code;
       toggleFavorite(code);
-      renderFavoritesModal();
+      renderFavoritesDrawer();
     });
   });
 }
@@ -2379,21 +2381,25 @@ function initEntityFilters() {
 }
 
 function initWorkspaceActions() {
-  // Modal de Favoritos
+  // Panel Lateral Drawer de Favoritos
   const btnFavorites = document.getElementById('btn-favorites');
-  const btnCloseFavModal = document.getElementById('btn-close-favorites-modal');
-  const modalFav = document.getElementById('modal-favorites');
+  const btnCloseFavDrawer = document.getElementById('btn-close-favorites-drawer');
+  const drawerFav = document.getElementById('drawer-favorites');
 
-  if (btnFavorites && modalFav) {
-    btnFavorites.addEventListener('click', () => {
-      renderFavoritesModal();
-      modalFav.classList.remove('hidden');
-    });
-  }
-  if (btnCloseFavModal && modalFav) {
-    btnCloseFavModal.addEventListener('click', () => {
-      modalFav.classList.add('hidden');
-    });
+  const toggleFavDrawer = () => {
+    if (!drawerFav) return;
+    const isHidden = drawerFav.classList.contains('hidden');
+    if (isHidden) {
+      renderFavoritesDrawer();
+      drawerFav.classList.remove('hidden');
+    } else {
+      drawerFav.classList.add('hidden');
+    }
+  };
+
+  if (btnFavorites) btnFavorites.addEventListener('click', toggleFavDrawer);
+  if (btnCloseFavDrawer && drawerFav) {
+    btnCloseFavDrawer.addEventListener('click', () => drawerFav.classList.add('hidden'));
   }
 
   // 1. Botones del Icon Rail
@@ -2408,14 +2414,11 @@ function initWorkspaceActions() {
         const input = document.getElementById('main-search-input');
         if (input) { input.focus(); input.select(); }
       } else if (title.includes('Favoritos') || index === 1) {
-        if (modalFav) {
-          renderFavoritesModal();
-          modalFav.classList.remove('hidden');
-        }
+        toggleFavDrawer();
       } else if (title.includes('Recientes') || index === 2) {
         const input = document.getElementById('main-search-input');
         if (input) { input.focus(); input.select(); }
-        showToastNotification('🕒 Enfocando historial de búsquedas en la barra inteligente');
+        showToastNotification('🕒 Búsquedas recientes disponibles al hacer clic en el buscador');
       } else if (title.includes('Calculadora') || index === 3) {
         const modalCalc = document.getElementById('modal-calc');
         if (modalCalc) modalCalc.classList.remove('hidden');
@@ -2432,42 +2435,103 @@ function initWorkspaceActions() {
     });
   });
 
-  // 2. Pestañas Superiores de Subpartidas (App Tabs)
-  const appTabs = document.querySelectorAll('.tabstrip .apptab');
-  appTabs.forEach(tab => {
-    tab.addEventListener('click', (e) => {
-      if (e.target.classList.contains('x')) {
-        e.stopPropagation();
-        if (document.querySelectorAll('.tabstrip .apptab:not(.new)').length > 1) {
-          tab.remove();
-          showToastNotification('Pestaña cerrada');
-        }
-        return;
-      }
-      if (tab.classList.contains('new')) {
-        const input = document.getElementById('main-search-input');
-        if (input) { input.value = ''; input.focus(); }
-        showToastNotification('🔍 Ingresa un código o descripción para abrir una nueva pestaña');
-        return;
-      }
+  // 2. Gestor Dinámico de Pestañas Estilo Chrome (TabManager)
+  window.TabManager = {
+    tabs: [
+      { id: 'tab-1', code: '8517.13.00.00' },
+      { id: 'tab-2', code: '6402.19.00.00' },
+      { id: 'tab-3', code: '8703.23.00.00' }
+    ],
+    activeTabId: 'tab-1',
 
-      document.querySelectorAll('.tabstrip .apptab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const codeSpan = tab.querySelector('.code');
-      if (codeSpan && state.dataset && state.dataset.subpartidas) {
-        const code = codeSpan.textContent.trim();
-        const match = state.dataset.subpartidas.find(s => s.codigo10 === code || s.codigo10.replace(/\./g, '') === code.replace(/\./g, ''));
+    render() {
+      const container = document.querySelector('.tabstrip');
+      if (!container) return;
+
+      container.innerHTML = `
+        ${this.tabs.map(t => `
+          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}">
+            <span class="code">${t.code || 'Nueva pestaña'}</span>
+            <span class="x" data-close-id="${t.id}">✕</span>
+          </div>
+        `).join('')}
+        <div class="apptab new" title="Abrir nueva pestaña">+</div>
+      `;
+
+      container.querySelectorAll('.apptab[data-tab-id]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.dataset.closeId) return;
+          this.switchTab(el.dataset.tabId);
+        });
+      });
+
+      container.querySelectorAll('.x[data-close-id]').forEach(x => {
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.closeTab(x.dataset.closeId);
+        });
+      });
+
+      container.querySelector('.apptab.new')?.addEventListener('click', () => {
+        this.newTab();
+      });
+    },
+
+    switchTab(tabId) {
+      const tab = this.tabs.find(t => t.id === tabId);
+      if (!tab) return;
+      this.activeTabId = tab.id;
+      this.render();
+
+      if (tab.code && state.dataset && state.dataset.subpartidas) {
+        const match = state.dataset.subpartidas.find(s => s.codigo10 === tab.code || s.codigo10.replace(/\./g, '') === tab.code.replace(/\./g, ''));
         if (match) {
           state.activeItem = match;
           const mainSearchInput = document.getElementById('main-search-input');
           if (mainSearchInput) mainSearchInput.value = match.codigo10;
           updateActiveItemPanel(match);
           renderSearchResults();
-          showToastNotification(`Pestaña activa: ${code}`);
+          showToastNotification(`Pestaña activa: ${match.codigo10}`);
         }
+      } else {
+        const mainSearchInput = document.getElementById('main-search-input');
+        if (mainSearchInput) { mainSearchInput.value = ''; mainSearchInput.focus(); }
       }
-    });
-  });
+    },
+
+    newTab(code = '') {
+      const newId = `tab-${Date.now()}`;
+      const newTabObj = { id: newId, code: code };
+      this.tabs.push(newTabObj);
+      this.switchTab(newId);
+      showToastNotification(code ? `Nueva pestaña: ${code}` : '🔍 Nueva pestaña de búsqueda abierta');
+    },
+
+    closeTab(tabId) {
+      if (this.tabs.length <= 1) {
+        showToastNotification('Debe haber al menos 1 pestaña abierta');
+        return;
+      }
+      const idx = this.tabs.findIndex(t => t.id === tabId);
+      this.tabs = this.tabs.filter(t => t.id !== tabId);
+      if (this.activeTabId === tabId) {
+        const nextTab = this.tabs[Math.max(0, idx - 1)];
+        this.switchTab(nextTab.id);
+      } else {
+        this.render();
+      }
+    },
+
+    updateActiveTabCode(code) {
+      const active = this.tabs.find(t => t.id === this.activeTabId);
+      if (active) {
+        active.code = code;
+        this.render();
+      }
+    }
+  };
+
+  window.TabManager.render();
 
   // 3. Colapsar / Expandir Dock Derecho
   const dockCollapseBtn = document.querySelector('.dock-collapse');
