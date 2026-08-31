@@ -99,20 +99,22 @@
 .seal .p { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--brass); }
 .seal .l { font-family: var(--font-mono); font-size: 7.5px; color: var(--brass-soft); text-transform: uppercase; }
 
-/* ---------- PANEL LATERAL (SIDE PANEL DRAWER) FAVORITOS ---------- */
+/* ---------- PANEL POP-OVER COMPACTO Y PRECISO DE FAVORITOS ---------- */
 .side-panel-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 360px;
-  height: 100vh;
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  width: 330px;
+  max-height: 460px;
   background: var(--panel-3);
-  border-left: 1px solid var(--line);
-  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
   z-index: 990;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 .side-panel-drawer.hidden {
   display: none !important;
@@ -121,7 +123,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--panel-2);
 }
@@ -597,10 +599,10 @@ header.topbar {
   border-color: var(--brass);
 }
 
-/* ---------- REJILLA WORKSPACE (4 COLUMNAS: ICON RAIL | NANDINA TREE | MAIN CENTER | DOCK RIGHT) ---------- */
+/* ---------- REJILLA WORKSPACE (3 COLUMNAS: NANDINA TREE | MAIN CENTER | DOCK RIGHT) ---------- */
 .body-grid, .layout {
   display: grid !important;
-  grid-template-columns: 56px 250px 1fr 340px !important;
+  grid-template-columns: 250px 1fr 340px !important;
   gap: 0;
   align-items: stretch;
   width: 100%;
@@ -608,16 +610,8 @@ header.topbar {
   overflow: hidden;
 }
 
-.icon-rail {
-  grid-column: 1 / 2 !important;
-  border-right: 1px solid var(--line);
-  background: var(--panel-3);
-  padding: 16px 0;
-  z-index: 10;
-}
-
 .panel-left-tree {
-  grid-column: 2 / 3 !important;
+  grid-column: 1 / 2 !important;
   border-right: 1px solid var(--line);
   padding: 20px 14px 40px;
   background: var(--ink);
@@ -625,7 +619,7 @@ header.topbar {
 }
 
 .panel-center-main, .main {
-  grid-column: 3 / 4 !important;
+  grid-column: 2 / 3 !important;
   padding: 24px 28px 60px;
   overflow-y: auto;
   min-width: 0;
@@ -633,7 +627,7 @@ header.topbar {
 }
 
 .panel-right-tech, .rail.right {
-  grid-column: 4 / 5 !important;
+  grid-column: 3 / 4 !important;
   border-left: 1px solid var(--line) !important;
   border-right: none !important;
   border-top: none !important;

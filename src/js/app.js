@@ -2407,39 +2407,6 @@ function initWorkspaceActions() {
     btnCloseFavDrawer.addEventListener('click', () => drawerFav.classList.add('hidden'));
   }
 
-  // 1. Botones del Icon Rail
-  const railBtns = document.querySelectorAll('.icon-rail .rail-btn');
-  railBtns.forEach((btn, index) => {
-    btn.addEventListener('click', () => {
-      railBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const title = btn.getAttribute('title') || '';
-      if (title.includes('Buscador') || index === 0) {
-        const input = document.getElementById('main-search-input');
-        if (input) { input.focus(); input.select(); }
-      } else if (title.includes('Favoritos') || index === 1) {
-        toggleFavDrawer();
-      } else if (title.includes('Recientes') || index === 2) {
-        const input = document.getElementById('main-search-input');
-        if (input) { input.focus(); input.select(); }
-        showToastNotification('🕒 Búsquedas recientes disponibles al hacer clic en el buscador');
-      } else if (title.includes('Calculadora') || index === 3) {
-        const modalCalc = document.getElementById('modal-calc');
-        if (modalCalc) modalCalc.classList.remove('hidden');
-      } else if (title.includes('Checklist') || index === 4) {
-        const tabChecklist = document.querySelector('.stamp-tab[data-centertab="tab-checklist"]');
-        if (tabChecklist) tabChecklist.click();
-        else showToastNotification('✅ Abriendo Checklist VUCE de Mercancías Restringidas');
-      } else if (title.includes('Ajustes') || index === 5) {
-        const themeBtn = document.getElementById('btn-theme-toggle');
-        if (themeBtn) themeBtn.click();
-      } else if (btn.classList.contains('avatar') || index === 6) {
-        showToastNotification('👤 PartidaArancelaria Enterprise Workspace v2.5 — Operador Aduanero Registrado');
-      }
-    });
-  });
-
   // 2. Gestor Dinámico de Pestañas Estilo Chrome (TabManager)
   window.TabManager = {
     tabs: [
