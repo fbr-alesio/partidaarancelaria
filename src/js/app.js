@@ -2488,14 +2488,27 @@ function initWorkspaceActions() {
       }
     },
 
+    getTabTitle(t) {
+      if (!t.code) return '🔍 Nueva pestaña';
+      if (state.dataset && state.dataset.subpartidas) {
+        const match = state.dataset.subpartidas.find(s => s.codigo10 === t.code || s.codigo10.replace(/\./g, '') === t.code.replace(/\./g, ''));
+        if (match) {
+          const desc = state.searchEngine ? state.searchEngine.getDisplayDescription(match) : match.descripcionOficial;
+          const shortDesc = desc ? (desc.length > 18 ? desc.substring(0, 18) + '…' : desc) : '';
+          return `${match.codigo10}${shortDesc ? ` (${shortDesc})` : ''}`;
+        }
+      }
+      return t.code;
+    },
+
     render() {
       const container = document.querySelector('.tabstrip');
       if (!container) return;
 
       container.innerHTML = `
         ${this.tabs.map(t => `
-          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}">
-            <span class="code">${t.code || 'Nueva pestaña'}</span>
+          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="${t.code || 'Nueva pestaña'}">
+            <span class="code">${this.getTabTitle(t)}</span>
             <span class="x" data-close-id="${t.id}">✕</span>
           </div>
         `).join('')}
