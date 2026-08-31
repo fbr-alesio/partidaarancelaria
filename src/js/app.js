@@ -511,11 +511,13 @@ function renderSearchResults() {
     return;
   }
 
-  // Mantener siempre sincronizados resultados, ficha e impuestos.
+  // Mantener siempre sincronizados resultados, ficha e impuestos (actualizando la pestaña si está nueva/vacía)
+  const activeTab = window.TabManager && window.TabManager.tabs ? window.TabManager.tabs.find(t => t.id === window.TabManager.activeTabId) : null;
   const activeIsVisible = results.some(item => state.activeItem && item.codigo10 === state.activeItem.codigo10);
-  if (query.trim() && !activeIsVisible) {
+
+  if (query.trim() && (results.length > 0) && (!activeTab || !activeTab.code || !activeIsVisible)) {
     state.activeItem = results[0];
-    updateActiveItemPanel(state.activeItem);
+    updateActiveItemPanel(state.activeItem, true);
   }
 
   const displayResults = results.slice(0, 100);
@@ -558,7 +560,7 @@ function renderSearchResults() {
       const matches = state.searchEngine.search({ query: code });
       if (matches.length > 0) {
         state.activeItem = matches[0];
-        updateActiveItemPanel(state.activeItem);
+        updateActiveItemPanel(state.activeItem, true);
         tableBody.querySelectorAll('tr').forEach(r => r.classList.remove('active-row'));
         row.classList.add('active-row');
         row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -2624,6 +2626,8 @@ function initWorkspaceActions() {
       if (code) {
         this.switchTab(newId);
       } else {
+        state.activeItem = null;
+        updateActiveItemPanel(null);
         const mainSearchInput = document.getElementById('main-search-input');
         if (mainSearchInput) { mainSearchInput.value = ''; mainSearchInput.focus(); }
         showToastNotification('🔍 Nueva pestaña de búsqueda abierta');
