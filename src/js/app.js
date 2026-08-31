@@ -682,7 +682,7 @@ function updateActiveItemPanel(item) {
   syncCalculatorWithActiveItem(item);
   if (window.addRecentItemToHistory) window.addRecentItemToHistory(item);
   if (window.TabManager && window.TabManager.updateActiveTabCode) {
-    window.TabManager.updateActiveTabCode(item.codigo10);
+    window.TabManager.updateActiveTabCode(item.codigo10, fromSearch);
   }
 
   const btnCopy = document.getElementById('btn-copy-active-code');
@@ -2252,7 +2252,7 @@ function renderRecentsDropdown() {
       const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
       if (target) {
         state.activeItem = target;
-        updateActiveItemPanel(target);
+        updateActiveItemPanel(target, true);
         renderSearchResults();
         showToastNotification(`Abriendo reciente ${code}`);
       }
@@ -2306,7 +2306,7 @@ function updateAutocompleteDropdown(query) {
       const target = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
       if (target) {
         state.activeItem = target;
-        updateActiveItemPanel(target);
+        updateActiveItemPanel(target, true);
         renderSearchResults();
       }
     });
@@ -2578,8 +2578,21 @@ function initWorkspaceActions() {
       }
     },
 
-    updateActiveTabCode(code) {
+    updateActiveTabCode(code, fromSearch = false) {
+      if (!code) return;
       const active = this.tabs.find(t => t.id === this.activeTabId);
+
+      // Si se selecciona una partida desde el buscador y la pestaña activa ya tiene una partida asignada distinta
+      if (fromSearch && active && active.code && active.code !== code) {
+        const existing = this.tabs.find(t => t.code === code);
+        if (existing) {
+          this.switchTab(existing.id);
+        } else {
+          this.newTab(code);
+        }
+        return;
+      }
+
       if (active) {
         active.code = code;
         this.saveState();
