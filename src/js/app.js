@@ -2285,3 +2285,93 @@ function initEntityFilters() {
   });
 }
 
+function initWorkspaceActions() {
+  // 1. Botones del Icon Rail
+  const railBtns = document.querySelectorAll('.icon-rail .rail-btn');
+  railBtns.forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+      railBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const title = btn.getAttribute('title') || '';
+      if (title.includes('Buscador') || index === 0) {
+        const input = document.getElementById('main-search-input');
+        if (input) { input.focus(); input.select(); }
+      } else if (title.includes('Favoritos') || index === 1) {
+        const btnFav = document.getElementById('btn-favorites');
+        if (btnFav) btnFav.click();
+      } else if (title.includes('Recientes') || index === 2) {
+        const recWrap = document.getElementById('recent-searches-wrap');
+        if (recWrap) recWrap.classList.toggle('hidden');
+        showToastNotification('🕒 Mostrando historial de búsquedas recientes');
+      } else if (title.includes('Calculadora') || index === 3) {
+        const modalCalc = document.getElementById('modal-calc');
+        if (modalCalc) modalCalc.classList.remove('hidden');
+      } else if (title.includes('Checklist') || index === 4) {
+        const tabChecklist = document.querySelector('.stamp-tab[data-centertab="tab-checklist"]');
+        if (tabChecklist) tabChecklist.click();
+        else showToastNotification('✅ Abriendo Checklist VUCE de Mercancías Restringidas');
+      } else if (title.includes('Ajustes') || index === 5) {
+        const themeBtn = document.getElementById('btn-theme-toggle');
+        if (themeBtn) themeBtn.click();
+      } else if (btn.classList.contains('avatar') || index === 6) {
+        showToastNotification('👤 PartidaArancelaria Enterprise Workspace v2.5 — Operador Aduanero Registrado');
+      }
+    });
+  });
+
+  // 2. Pestañas Superiores de Subpartidas (App Tabs)
+  const appTabs = document.querySelectorAll('.tabstrip .apptab');
+  appTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      if (e.target.classList.contains('x')) {
+        e.stopPropagation();
+        if (document.querySelectorAll('.tabstrip .apptab:not(.new)').length > 1) {
+          tab.remove();
+          showToastNotification('Pestaña cerrada');
+        }
+        return;
+      }
+      if (tab.classList.contains('new')) {
+        const input = document.getElementById('main-search-input');
+        if (input) { input.value = ''; input.focus(); }
+        showToastNotification('🔍 Ingresa un código o descripción para abrir una nueva pestaña');
+        return;
+      }
+
+      document.querySelectorAll('.tabstrip .apptab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const codeSpan = tab.querySelector('.code');
+      if (codeSpan && state.dataset && state.dataset.subpartidas) {
+        const code = codeSpan.textContent.trim();
+        const match = state.dataset.subpartidas.find(s => s.codigo10 === code || s.codigo10.replace(/\./g, '') === code.replace(/\./g, ''));
+        if (match) {
+          state.activeItem = match;
+          const mainSearchInput = document.getElementById('main-search-input');
+          if (mainSearchInput) mainSearchInput.value = match.codigo10;
+          updateActiveItemPanel(match);
+          renderSearchResults();
+          showToastNotification(`Pestaña activa: ${code}`);
+        }
+      }
+    });
+  });
+
+  // 3. Colapsar / Expandir Dock Derecho
+  const dockCollapseBtn = document.querySelector('.dock-collapse');
+  const dockPanel = document.querySelector('.panel-right-tech');
+  if (dockCollapseBtn && dockPanel) {
+    dockCollapseBtn.addEventListener('click', () => {
+      const isHidden = dockPanel.style.display === 'none';
+      dockPanel.style.display = isHidden ? 'block' : 'none';
+      dockCollapseBtn.textContent = isHidden ? '»' : '«';
+      showToastNotification(isHidden ? 'Dock derecho expandido' : 'Dock derecho colapsado');
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initWorkspaceActions();
+});
+
+

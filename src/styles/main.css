@@ -570,32 +570,51 @@ header.topbar {
   border-color: var(--brass);
 }
 
-/* ---------- LAYOUT DE 3 COLUMNAS ---------- */
-.layout {
+/* ---------- REJILLA WORKSPACE (4 COLUMNAS: ICON RAIL | NANDINA TREE | MAIN CENTER | DOCK RIGHT) ---------- */
+.body-grid, .layout {
   display: grid !important;
-  grid-template-columns: 220px 1fr 280px !important;
+  grid-template-columns: 56px 250px 1fr 340px !important;
   gap: 0;
-  align-items: start;
-  flex: 1;
+  align-items: stretch;
   width: 100%;
+  min-height: calc(100vh - 100px);
+  overflow: hidden;
 }
-.rail {
+
+.icon-rail {
+  grid-column: 1 / 2 !important;
+  border-right: 1px solid var(--line);
+  background: var(--panel-3);
+  padding: 16px 0;
+  z-index: 10;
+}
+
+.panel-left-tree {
+  grid-column: 2 / 3 !important;
   border-right: 1px solid var(--line);
   padding: 20px 14px 40px;
-  min-height: 70vh;
+  background: var(--ink);
+  overflow-y: auto;
 }
-.rail.right {
+
+.panel-center-main, .main {
   grid-column: 3 / 4 !important;
-  border-right: none !important;
+  padding: 24px 28px 60px;
+  overflow-y: auto;
+  min-width: 0;
+  background: var(--ink);
+}
+
+.panel-right-tech, .rail.right {
+  grid-column: 4 / 5 !important;
   border-left: 1px solid var(--line) !important;
+  border-right: none !important;
+  border-top: none !important;
   padding: 20px 16px 40px !important;
   display: block !important;
   margin-top: 0 !important;
-  border-top: none !important;
-}
-.main {
-  grid-column: 2 / 3 !important;
-  padding: 24px 24px 60px;
+  background: var(--panel-3);
+  overflow-y: auto;
 }
 
 .rail-title {
