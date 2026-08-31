@@ -473,8 +473,8 @@ header.topbar {
 
 /* ---------- LAYOUT DE 3 COLUMNAS ---------- */
 .layout {
-  display: grid;
-  grid-template-columns: 220px 1fr 280px;
+  display: grid !important;
+  grid-template-columns: 220px 1fr 280px !important;
   gap: 0;
   align-items: start;
   flex: 1;
@@ -486,12 +486,16 @@ header.topbar {
   min-height: 70vh;
 }
 .rail.right {
-  border-right: none;
-  border-left: 1px solid var(--line);
-  padding: 20px 16px 40px;
+  grid-column: 3 / 4 !important;
+  border-right: none !important;
+  border-left: 1px solid var(--line) !important;
+  padding: 20px 16px 40px !important;
   display: block !important;
+  margin-top: 0 !important;
+  border-top: none !important;
 }
 .main {
+  grid-column: 2 / 3 !important;
   padding: 24px 24px 60px;
 }
 
@@ -1991,18 +1995,8 @@ footer {
 
 /* ---------- RESPONSIVE BREAKPOINTS ---------- */
 @media (max-width: 768px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
   .rail.panel-left-tree {
     display: none;
-  }
-  .rail.right {
-    display: block !important;
-    border-left: none;
-    border-top: 1.5px solid var(--line);
-    margin-top: 24px;
-    padding-top: 24px;
   }
   .tax-row {
     grid-template-columns: repeat(2, 1fr);
