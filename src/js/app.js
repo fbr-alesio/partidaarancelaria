@@ -60,6 +60,7 @@ async function initializeApp() {
     initShareableLink();
     initEntityFilters();
     updateFavoritesBadge();
+    initWorkspaceActions();
 
     // Renderizar Workbench inicial
     renderSearchResults();
@@ -2003,11 +2004,7 @@ function initCommandPalette() {
     modal.classList.add('hidden');
   }
 
-  if (mainSearchInput) {
-    mainSearchInput.addEventListener('focus', () => openPalette());
-    mainSearchInput.addEventListener('click', () => openPalette());
-  }
-
+  // Permitir uso directo de mainSearchInput sin modal forzoso
   if (btnClose) btnClose.onclick = closePalette;
 
   paletteInput.addEventListener('input', () => {
