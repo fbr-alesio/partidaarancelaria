@@ -684,12 +684,6 @@ function updateActiveItemPanel(item) {
     window.TabManager.updateActiveTabCode(item.codigo10);
   }
 
-  // Mantener/regresar siempre al panel superior (Hero Card / Workbench) para la mejor experiencia de búsqueda
-  const topPanel = document.querySelector('.workbench') || document.getElementById('tab-general') || document.querySelector('header.topbar');
-  if (topPanel) {
-    topPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
   const btnCopy = document.getElementById('btn-copy-active-code');
   if (btnCopy) btnCopy.onclick = () => copyToClipboard(item.codigo10);
 
