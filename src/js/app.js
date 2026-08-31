@@ -2458,14 +2458,35 @@ function initWorkspaceActions() {
     btnCloseFavDrawer.addEventListener('click', () => drawerFav.classList.add('hidden'));
   }
 
-  // 2. Gestor Dinámico de Pestañas Estilo Chrome (TabManager)
+  // 2. Gestor Dinámico de Pestañas Estilo Chrome (TabManager con Persistencia LocalStorage)
+  const defaultTabs = [
+    { id: 'tab-1', code: '8517.13.00.00' },
+    { id: 'tab-2', code: '6402.19.00.00' },
+    { id: 'tab-3', code: '8703.23.00.00' }
+  ];
+
+  let savedTabs = null;
+  let savedActiveTabId = null;
+  try {
+    const rawTabs = localStorage.getItem('arancel_tabs');
+    if (rawTabs) savedTabs = JSON.parse(rawTabs);
+    savedActiveTabId = localStorage.getItem('arancel_active_tab_id');
+  } catch (e) {
+    console.warn('Error leyendo pestañas de localStorage:', e);
+  }
+
   window.TabManager = {
-    tabs: [
-      { id: 'tab-1', code: '8517.13.00.00' },
-      { id: 'tab-2', code: '6402.19.00.00' },
-      { id: 'tab-3', code: '8703.23.00.00' }
-    ],
-    activeTabId: 'tab-1',
+    tabs: (savedTabs && Array.isArray(savedTabs) && savedTabs.length > 0) ? savedTabs : defaultTabs,
+    activeTabId: (savedActiveTabId && savedTabs && savedTabs.some(t => t.id === savedActiveTabId)) ? savedActiveTabId : ((savedTabs && savedTabs[0]) ? savedTabs[0].id : 'tab-1'),
+
+    saveState() {
+      try {
+        localStorage.setItem('arancel_tabs', JSON.stringify(this.tabs));
+        localStorage.setItem('arancel_active_tab_id', this.activeTabId);
+      } catch (e) {
+        console.error('Error guardando estado de pestañas:', e);
+      }
+    },
 
     render() {
       const container = document.querySelector('.tabstrip');
@@ -2504,6 +2525,7 @@ function initWorkspaceActions() {
       const tab = this.tabs.find(t => t.id === tabId);
       if (!tab) return;
       this.activeTabId = tab.id;
+      this.saveState();
       this.render();
 
       if (tab.code && state.dataset && state.dataset.subpartidas) {
@@ -2526,8 +2548,16 @@ function initWorkspaceActions() {
       const newId = `tab-${Date.now()}`;
       const newTabObj = { id: newId, code: code };
       this.tabs.push(newTabObj);
-      this.switchTab(newId);
-      showToastNotification(code ? `Nueva pestaña: ${code}` : '🔍 Nueva pestaña de búsqueda abierta');
+      this.activeTabId = newId;
+      this.saveState();
+      this.render();
+      if (code) {
+        this.switchTab(newId);
+      } else {
+        const mainSearchInput = document.getElementById('main-search-input');
+        if (mainSearchInput) { mainSearchInput.value = ''; mainSearchInput.focus(); }
+        showToastNotification('🔍 Nueva pestaña de búsqueda abierta');
+      }
     },
 
     closeTab(tabId) {
@@ -2539,8 +2569,11 @@ function initWorkspaceActions() {
       this.tabs = this.tabs.filter(t => t.id !== tabId);
       if (this.activeTabId === tabId) {
         const nextTab = this.tabs[Math.max(0, idx - 1)];
+        this.activeTabId = nextTab.id;
+        this.saveState();
         this.switchTab(nextTab.id);
       } else {
+        this.saveState();
         this.render();
       }
     },
@@ -2549,6 +2582,7 @@ function initWorkspaceActions() {
       const active = this.tabs.find(t => t.id === this.activeTabId);
       if (active) {
         active.code = code;
+        this.saveState();
         this.render();
       }
     }
