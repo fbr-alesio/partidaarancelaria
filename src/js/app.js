@@ -2368,6 +2368,81 @@ function initWorkspaceActions() {
       showToastNotification(isHidden ? 'Dock derecho expandido' : 'Dock derecho colapsado');
     });
   }
+
+  // 4. Calculadora CIF en Tiempo Real en Dock Derecho
+  const dockFob = document.getElementById('dock-fob-val');
+  const dockFlete = document.getElementById('dock-flete-val');
+  const dockUnits = document.getElementById('dock-unidades-val');
+  const dockMargen = document.getElementById('dock-margen-val');
+  const dockCertYes = document.getElementById('dock-cert-yes');
+  const dockCertNo = document.getElementById('dock-cert-no');
+  const dockBtnPdf = document.getElementById('dock-btn-export-pdf');
+  let dockCertIsYes = true;
+
+  if (dockCertYes && dockCertNo) {
+    dockCertYes.addEventListener('click', () => {
+      dockCertYes.classList.add('selected');
+      dockCertNo.classList.remove('selected');
+      dockCertIsYes = true;
+      recalcDock();
+    });
+    dockCertNo.addEventListener('click', () => {
+      dockCertNo.classList.add('selected');
+      dockCertYes.classList.remove('selected');
+      dockCertIsYes = false;
+      recalcDock();
+    });
+  }
+
+  [dockFob, dockFlete, dockUnits, dockMargen].forEach(el => {
+    if (el) {
+      el.addEventListener('input', recalcDock);
+      el.addEventListener('change', recalcDock);
+    }
+  });
+
+  if (dockBtnPdf) {
+    dockBtnPdf.addEventListener('click', () => {
+      const modalCalc = document.getElementById('modal-calc');
+      if (modalCalc) modalCalc.classList.remove('hidden');
+      showToastNotification('📄 Abriendo generador de reporte A4 PDF');
+    });
+  }
+
+  function recalcDock() {
+    const fob = parseFloat(dockFob?.value) || 0;
+    const fleteSeguro = parseFloat(dockFlete?.value) || 0;
+    const unidades = Math.max(1, parseInt(dockUnits?.value) || 1);
+    const margen = parseFloat(dockMargen?.value) || 30;
+    const item = state.activeItem || { adValorem: 0 };
+    const tcText = document.getElementById('sunat-tc-val')?.textContent || '3.750';
+    const tc = parseFloat(tcText.replace(/[^0-9.]/g, '')) || 3.75;
+
+    const res = TariffCalculator.calculate({
+      fob, flete: fleteSeguro, seguro: 0,
+      adValoremPct: item.adValorem || 0,
+      iscPct: item.isc || 0,
+      percepcionPct: 3.5,
+      paisOrigen: 'CN',
+      tlcVerificado: dockCertIsYes,
+      unidades, tipoCambio: tc, margenGananciaPct: margen
+    });
+
+    const elTotal = document.getElementById('dock-costo-total-pen');
+    const elUnitario = document.getElementById('dock-costo-unitario-pen');
+    const elVenta = document.getElementById('dock-venta-sugerida-pen');
+    const elUtil = document.getElementById('dock-utilidad-unitario-pen');
+
+    if (elTotal) elTotal.textContent = `S/. ${(parseFloat(res.costoTotalLanded) * tc).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (elUnitario) elUnitario.textContent = `S/. ${res.costoUnitarioPEN}`;
+    if (elVenta) elVenta.textContent = `S/. ${res.precioVentaSugeridoPEN}`;
+    if (elUtil) {
+      const utilUnit = (parseFloat(res.precioVentaSugeridoPEN) - parseFloat(res.costoUnitarioPEN)).toFixed(2);
+      elUtil.textContent = `S/. ${utilUnit}`;
+    }
+  }
+
+  recalcDock();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
