@@ -2500,8 +2500,9 @@ function initWorkspaceActions() {
 
       container.innerHTML = `
         ${this.tabs.map(t => `
-          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="Doble clic para cambiar nombre">
+          <div class="apptab ${t.id === this.activeTabId ? 'active' : ''}" data-tab-id="${t.id}" title="Doble clic o clic en ✏️ para cambiar nombre">
             <span class="code" data-title-id="${t.id}">${this.getTabTitle(t)}</span>
+            <span class="btn-edit-tab-name" data-edit-id="${t.id}" title="Cambiar nombre de pestaña">✏️</span>
             <span class="x" data-close-id="${t.id}">✕</span>
           </div>
         `).join('')}
@@ -2512,7 +2513,7 @@ function initWorkspaceActions() {
         const tabId = el.dataset.tabId;
 
         el.addEventListener('click', (e) => {
-          if (e.target.dataset.closeId || e.target.tagName === 'INPUT') return;
+          if (e.target.dataset.closeId || e.target.dataset.editId || e.target.tagName === 'INPUT') return;
           if (this.activeTabId !== tabId) {
             this.switchTab(tabId);
           }
@@ -2524,6 +2525,14 @@ function initWorkspaceActions() {
           e.preventDefault();
           this.editTabName(tabId, el);
         });
+
+        const btnEdit = el.querySelector('.btn-edit-tab-name');
+        if (btnEdit) {
+          btnEdit.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.editTabName(tabId, el);
+          });
+        }
       });
 
       container.querySelectorAll('.x[data-close-id]').forEach(x => {

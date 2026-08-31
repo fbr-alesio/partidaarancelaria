@@ -68,11 +68,15 @@
 .dots span { width: 11px; height: 11px; border-radius: 50%; background: #2A3A50; }
 .chrome-title { margin-left: 8px; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
 
-.tabstrip { display: flex; align-items: center; gap: 2px; background: var(--panel-3); padding: 0 10px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-.apptab { display: flex; align-items: center; gap: 9px; padding: 10px 14px 9px; font-size: 12px; color: var(--text-muted); border-bottom: 2px solid transparent; cursor: pointer; max-width: 260px; white-space: nowrap; flex-shrink: 0; }
+.tabstrip { display: flex; align-items: center; gap: 2px; background: var(--panel-3); padding: 0 10px; border-bottom: 1px solid var(--line); overflow-x: auto; user-select: none; -webkit-user-select: none; }
+.apptab { display: flex; align-items: center; gap: 8px; padding: 10px 14px 9px; font-size: 12px; color: var(--text-muted); border-bottom: 2px solid transparent; cursor: pointer; max-width: 260px; white-space: nowrap; flex-shrink: 0; user-select: none; -webkit-user-select: none; }
 .apptab.active { color: var(--text); background: var(--ink); border-bottom-color: var(--brass); border-radius: 6px 6px 0 0; }
-.apptab .code { font-family: var(--font-mono); font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.apptab .code { font-family: var(--font-mono); font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; pointer-events: auto; }
+.apptab .btn-edit-tab-name { opacity: 0; font-size: 11px; color: var(--brass); cursor: pointer; transition: opacity 0.15s ease; padding: 1px 3px; border-radius: 3px; }
+.apptab:hover .btn-edit-tab-name { opacity: 0.8; }
+.apptab .btn-edit-tab-name:hover { opacity: 1; background: rgba(201, 162, 39, 0.15); }
 .apptab .x { color: var(--text-faint); font-size: 13px; margin-left: 2px; }
+.apptab .x:hover { color: var(--seal); }
 .apptab.new { color: var(--text-faint); font-size: 16px; padding: 8px 12px; }
 
 .body-grid { display: grid; grid-template-columns: 56px 220px 1fr 320px; overflow: hidden; min-height: 720px; }
