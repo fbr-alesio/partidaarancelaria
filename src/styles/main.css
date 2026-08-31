@@ -79,6 +79,12 @@
 .apptab .x:hover { color: var(--seal); }
 .apptab.new { color: var(--text-faint); font-size: 16px; padding: 8px 12px; }
 
+.autocomplete-live-item:hover, .autocomplete-live-item.highlighted,
+.recent-autocomplete-item:hover, .recent-autocomplete-item.highlighted {
+  background: var(--panel-2) !important;
+  border-left: 3px solid var(--brass) !important;
+}
+
 .body-grid { display: grid; grid-template-columns: 56px 220px 1fr 320px; overflow: hidden; min-height: 720px; }
 
 .icon-rail { background: var(--panel-3); border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 6px; flex-shrink: 0; }

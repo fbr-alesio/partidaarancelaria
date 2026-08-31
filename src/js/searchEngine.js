@@ -1,3 +1,6 @@
+import Fuse from 'fuse.js';
+import sinonimosData from '../data/sinonimos.json' with { type: 'json' };
+
 export class SearchEngine {
   constructor(dataset = {}) {
     this.dataset = dataset || {};
@@ -6,6 +9,35 @@ export class SearchEngine {
     this.subpartidas = (this.dataset.subpartidas || []).map(item => this.normalizeItem(item));
     this.searchDocuments = new Map(this.subpartidas.map(item => [item.codigo10, this.buildSearchDocument(item)]));
     this.corpusTokens = new Set([...this.searchDocuments.values()].flatMap(document => document.tokens));
+    
+    // Indexación de sinónimos locales y difusos con Fuse.js
+    this.fuseIndexData = this.subpartidas.map(item => {
+      const codeClean = (item.codigo10 || '').replace(/\./g, '');
+      const code6Clean = (item.codigo6 || '').replace(/\./g, '');
+      const extraAliases = [
+        ...(item.sinonimos || []),
+        ...(sinonimosData[item.codigo10] || []),
+        ...(sinonimosData[codeClean] || []),
+        ...(sinonimosData[code6Clean] || [])
+      ];
+      return {
+        ...item,
+        aliases: extraAliases.join(' ')
+      };
+    });
+
+    this.fuse = new Fuse(this.fuseIndexData, {
+      keys: [
+        { name: 'codigo10', weight: 0.40 },
+        { name: 'descripcionOficial', weight: 0.25 },
+        { name: 'descripcionContextual', weight: 0.10 },
+        { name: 'aliases', weight: 0.25 }
+      ],
+      threshold: 0.35,
+      ignoreLocation: true,
+      minMatchCharLength: 2
+    });
+
     this.brandProfiles = {
       apple: {
         name: 'Apple', aliases: ['apple', 'apple inc'],
@@ -1009,6 +1041,15 @@ export class SearchEngine {
       }
       return { item, score };
     }).filter(result => result.score > 0);
+
+    // Si la búsqueda es de texto con posible error de tipeo y no obtuvo resultados, utilizar Fuse.js
+    if (!isCodeQuery && cleanQuery && results.length === 0 && this.fuse) {
+      const fuseMatches = this.fuse.search(cleanQuery, { limit: 30 });
+      results = fuseMatches.map((res, index) => ({
+        item: res.item,
+        score: Math.max(1, 1000 - (index * 10) - Math.round((res.score || 0) * 100))
+      }));
+    }
 
     if (seccion) results = results.filter(result => String(result.item.seccion).toUpperCase() === String(seccion).toUpperCase());
     if (capitulo) {

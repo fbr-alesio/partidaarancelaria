@@ -1,0 +1,249 @@
+{
+  "8517.13.00.00": [
+    "celular",
+    "celulares",
+    "smartphone",
+    "movil",
+    "telefono inteligente",
+    "iphone",
+    "android"
+  ],
+  "8517.14.00.00": [
+    "telefono basico",
+    "telefono con teclado",
+    "telefono simple"
+  ],
+  "8517.61.00.00": [
+    "router",
+    "modem",
+    "access point",
+    "equipo de red"
+  ],
+  "8471.30.00.00": [
+    "laptop",
+    "laptops",
+    "notebook",
+    "portatil",
+    "computadora portatil"
+  ],
+  "8471.49.00.00": [
+    "computadora de escritorio",
+    "pc",
+    "cpu",
+    "torre"
+  ],
+  "8443.32.11.00": [
+    "impresora",
+    "impresoras",
+    "multifuncional"
+  ],
+  "8528.72.00.00": [
+    "television",
+    "televisor",
+    "tv",
+    "pantalla",
+    "smart tv"
+  ],
+  "8418.10.10.00": [
+    "refrigeradora",
+    "refrigerador",
+    "nevera",
+    "frigider"
+  ],
+  "8450.11.00.00": [
+    "lavadora",
+    "lavadoras",
+    "maquina de lavar"
+  ],
+  "8509.40.10.00": [
+    "licuadora",
+    "licuadoras",
+    "procesadora de alimentos"
+  ],
+  "8414.59.00.00": [
+    "ventilador",
+    "ventiladores",
+    "ventilador de mesa"
+  ],
+  "8415.10.10.00": [
+    "aire acondicionado",
+    "split",
+    "minisplit",
+    "ac"
+  ],
+  "6402.19.00.00": [
+    "zapatilla",
+    "zapatillas",
+    "tenis",
+    "calzado deportivo",
+    "zapatilla de correr"
+  ],
+  "6403.91.10.00": [
+    "zapato de cuero",
+    "zapatos formales",
+    "calzado de vestir"
+  ],
+  "6109.10.00.31": [
+    "polo",
+    "polos",
+    "camiseta",
+    "camisetas",
+    "playera"
+  ],
+  "6110.20.10.10": [
+    "chompa",
+    "chompas",
+    "sueter",
+    "sweater"
+  ],
+  "6203.41.00.00": [
+    "jean",
+    "jeans",
+    "pantalon de mezclilla",
+    "pantalon de hombre"
+  ],
+  "6204.62.00.00": [
+    "pantalon de mujer",
+    "jean de dama"
+  ],
+  "4202.22.00.00": [
+    "cartera",
+    "carteras",
+    "bolso",
+    "bolsos",
+    "mochila de tela"
+  ],
+  "8703.21.00.10": [
+    "auto grande",
+    "suv de lujo",
+    "camioneta grande"
+  ],
+  "8711.20.00.00": [
+    "moto",
+    "motos",
+    "motocicleta",
+    "scooter"
+  ],
+  "4011.10.10.00": [
+    "llanta",
+    "llantas",
+    "neumatico",
+    "neumaticos",
+    "caucho"
+  ],
+  "8708.30.10.00": [
+    "freno",
+    "frenos",
+    "pastillas de freno",
+    "disco de freno"
+  ],
+  "8708.91.00.00": [
+    "autoparte",
+    "autopartes",
+    "repuesto de auto",
+    "repuestos"
+  ],
+  "9503.00.22.00": [
+    "juguete",
+    "juguetes",
+    "juguete para niños"
+  ],
+  "9401.61.00.00": [
+    "silla",
+    "sillas",
+    "silla tapizada"
+  ],
+  "9403.60.00.00": [
+    "mueble de madera",
+    "muebles",
+    "mesa de madera",
+    "escritorio"
+  ],
+  "3304.99.00.00": [
+    "crema facial",
+    "cosmetico",
+    "cosmeticos",
+    "crema de belleza"
+  ],
+  "3305.10.00.00": [
+    "shampoo",
+    "champu",
+    "shampu"
+  ],
+  "3401.11.00.00": [
+    "jabon",
+    "jabones",
+    "jabon de tocador"
+  ],
+  "6307.90.10.00": [
+    "mascarilla",
+    "mascarillas",
+    "mascarilla quirurgica",
+    "tapaboca"
+  ],
+  "9018.90.10.00": [
+    "equipo medico",
+    "instrumento medico",
+    "material medico"
+  ],
+  "3926.90.10.00": [
+    "producto de plastico",
+    "manufactura de plastico",
+    "envase plastico"
+  ],
+  "7326.90.10.00": [
+    "pieza metalica",
+    "manufactura de acero",
+    "pieza de fierro"
+  ],
+  "4819.10.00.00": [
+    "caja de carton",
+    "cajas de carton",
+    "empaque de carton"
+  ],
+  "8544.42.10.00": [
+    "cable usb",
+    "cable con conector",
+    "cable de datos"
+  ],
+  "9506.62.00.00": [
+    "pelota",
+    "balon",
+    "balones inflables",
+    "pelota de futbol"
+  ],
+  "8213.00.00.00": [
+    "tijera",
+    "tijeras"
+  ],
+  "8205.51.00.00": [
+    "herramienta manual",
+    "herramientas",
+    "llave",
+    "destornillador"
+  ],
+  "8467.21.00.00": [
+    "taladro",
+    "taladro electrico",
+    "atornillador"
+  ],
+  "8516.71.00.00": [
+    "cafetera",
+    "cafeteras",
+    "maquina de cafe"
+  ],
+  "8516.50.00.00": [
+    "microondas",
+    "horno microondas"
+  ],
+  "8516.60.10.00": [
+    "horno electrico",
+    "cocina electrica"
+  ],
+  "6506.10.00.00": [
+    "casco",
+    "cascos",
+    "casco de moto",
+    "casco de seguridad"
+  ]
+}

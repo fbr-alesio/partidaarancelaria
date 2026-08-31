@@ -205,8 +205,30 @@ function initSearch() {
 
   if (!searchInput) return;
 
+  if (autocompleteBox) {
+    autocompleteBox.setAttribute('role', 'listbox');
+    autocompleteBox.setAttribute('aria-live', 'polite');
+  }
+
+  let searchDebounceTimer = null;
+  let highlightedIndex = -1;
+
+  function updateItemHighlight(items) {
+    items.forEach((item, idx) => {
+      if (idx === highlightedIndex) {
+        item.classList.add('highlighted');
+        item.setAttribute('aria-selected', 'true');
+        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        item.classList.remove('highlighted');
+        item.setAttribute('aria-selected', 'false');
+      }
+    });
+  }
+
   searchInput.addEventListener('input', (e) => {
     const val = e.target.value;
+    highlightedIndex = -1;
     if (val.trim()) {
       btnClear.classList.remove('hidden');
       state.activeCapitulo = null;
@@ -214,13 +236,41 @@ function initSearch() {
     } else {
       btnClear.classList.add('hidden');
     }
-    updateAutocompleteDropdown(val);
-    renderSearchResults();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      updateAutocompleteDropdown(val);
+      renderSearchResults();
+    }, 180);
   });
 
   searchInput.addEventListener('keydown', (e) => {
+    if (autocompleteBox && !autocompleteBox.classList.contains('hidden')) {
+      const items = autocompleteBox.querySelectorAll('.autocomplete-live-item, .recent-autocomplete-item');
+      if (items.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex + 1) % items.length;
+          updateItemHighlight(items);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+          updateItemHighlight(items);
+          return;
+        }
+        if (e.key === 'Enter' && highlightedIndex >= 0 && items[highlightedIndex]) {
+          e.preventDefault();
+          items[highlightedIndex].click();
+          highlightedIndex = -1;
+          return;
+        }
+      }
+    }
+
     if (e.key === 'Escape') {
       searchInput.value = '';
+      highlightedIndex = -1;
       state.classificationHistory = [];
       state.relatedItem = null;
       state.activeCapitulo = null;
@@ -501,13 +551,36 @@ function renderSearchResults() {
   if (results.length === 0) {
     state.activeItem = null;
     updateActiveItemPanel(null);
+
+    // Registrar búsqueda fallida en localStorage (límite 200 ítems)
+    if (query.trim()) {
+      try {
+        const failed = JSON.parse(localStorage.getItem('failedSearches') || '[]');
+        if (failed.length === 0 || failed[failed.length - 1].query !== query.trim()) {
+          failed.push({ query: query.trim(), date: new Date().toISOString() });
+          localStorage.setItem('failedSearches', JSON.stringify(failed.slice(-200)));
+        }
+      } catch (e) { /* ignore */ }
+    }
+
     tableBody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">
-          🔍 No se encontraron coincidencias. Prueba un nombre comercial, una descripción o el código NANDINA.
+        <td colspan="5" style="text-align: center; padding: 28px 20px; color: var(--text-muted);">
+          <div style="font-size: 26px; margin-bottom: 8px;">🔍</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px;">No se encontraron coincidencias para "${query.trim() || 'tu consulta'}"</div>
+          <p style="font-size: 12px; color: var(--text-muted); max-width: 480px; margin: 0 auto 16px; line-height: 1.5;">
+            Prueba con sinónimos comerciales o utiliza el Clasificador Guiado basado en las Reglas RGI de SUNAT para determinar la subpartida nacional adecuada.
+          </p>
+          <button type="button" id="btn-empty-rgi-trigger" style="background: var(--brass); color: #000; border: none; font-weight: 700; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); transition: transform 0.15s ease;">
+            ⚖️ Iniciar Clasificador Guiado RGI
+          </button>
         </td>
       </tr>
     `;
+
+    tableBody.querySelector('#btn-empty-rgi-trigger')?.addEventListener('click', () => {
+      document.getElementById('modal-rgi-wizard')?.classList.remove('hidden');
+    });
     return;
   }
 
@@ -2231,7 +2304,7 @@ function renderRecentsDropdown() {
       const item = state.dataset.subpartidas ? state.dataset.subpartidas.find(s => s.codigo10 === code) : null;
       const desc = item ? state.searchEngine.getDisplayDescription(item) : 'Subpartida aduanera consultada recientemente';
       return `
-        <div class="recent-autocomplete-item" data-code="${code}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
+        <div class="recent-autocomplete-item" role="option" aria-selected="false" data-code="${code}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
           <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
             <span style="font-size: 14px; color: var(--brass);">🕒</span>
             <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -2284,7 +2357,7 @@ function updateAutocompleteDropdown(query) {
     ${matches.map(item => {
       const desc = state.searchEngine.getDisplayDescription(item);
       return `
-        <div class="autocomplete-live-item" data-code="${item.codigo10}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
+        <div class="autocomplete-live-item" role="option" aria-selected="false" data-code="${item.codigo10}" style="padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line-soft); transition: background 0.15s ease;">
           <div style="overflow: hidden; flex: 1; margin-right: 10px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
               <span class="font-mono" style="font-weight: 700; color: var(--brass); font-size: 13px;">${item.codigo10}</span>
