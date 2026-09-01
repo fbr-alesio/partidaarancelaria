@@ -372,11 +372,15 @@ function highlightText(text, query) {
 
 function renderSearchResults() {
   const query = document.getElementById('main-search-input').value;
-  const adValorem = document.getElementById('filter-advalorem').value;
+  const selectAdValorem = document.getElementById('filter-advalorem');
+  const activeRateChip = document.querySelector('.chip.active[data-rate-val]');
+  const adValorem = activeRateChip ? activeRateChip.dataset.rateVal : (selectAdValorem ? selectAdValorem.value : '');
   const activeEntityChip = document.querySelector('.entity-chip.active[data-entity-val]');
   const entityVal = activeEntityChip ? activeEntityChip.dataset.entityVal : '';
 
   let results = [];
+  let isDefaultView = false;
+
   // Activar y restaurar el panel de resultados al buscar
   if (query.trim()) {
     const tabGeneral = document.querySelector('.center-tab[data-centertab="tab-general"]');
@@ -389,8 +393,12 @@ function renderSearchResults() {
     results = state.searchEngine.search({ capitulo: state.activeCapitulo, adValorem });
   } else if (state.activeSeccion) {
     results = state.searchEngine.search({ seccion: state.activeSeccion, adValorem });
-  } else if (!query.trim() && state.relatedItem) {
-    results = state.searchEngine.search({ adValorem }).filter(item => item.partida4 === state.relatedItem.partida4);
+  } else if (!query.trim() && (state.relatedItem || state.activeItem)) {
+    const itemForRel = state.relatedItem || state.activeItem;
+    results = state.searchEngine.search({ adValorem }).filter(item => item.partida4 === itemForRel.partida4);
+  } else if (!query.trim()) {
+    isDefaultView = true;
+    results = state.searchEngine.search({ capitulo: '85', adValorem });
   } else {
     results = state.searchEngine.search({ query, adValorem });
   }
@@ -407,7 +415,15 @@ function renderSearchResults() {
   const btnShowAll = document.getElementById('btn-show-all-results');
   const aliasRule = query.trim() ? (state.searchEngine.getCommercialAlias(query) || {}) : {};
 
-  if (state.activeCapitulo) {
+  if (isDefaultView) {
+    countText.innerHTML = `
+      <div style="display: block; width: 100%; margin-bottom: 6px; font-size: 12px; color: var(--accent-blue); background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue);">
+        💡 <strong>Vista de Inicio (Capítulo 85 - Telecomunicaciones y Electrónica):</strong> Mostrando subpartidas destacadas por defecto. Escribe en el buscador o selecciona un capítulo para filtrar.
+      </div>
+      <span>Mostrando ${results.length.toLocaleString()} subpartidas destacadas</span>
+    `;
+    btnShowAll.classList.add('hidden');
+  } else if (state.activeCapitulo) {
     const capInfo = state.searchEngine.getCapituloInfo(state.activeCapitulo);
     const capTitle = capInfo ? capInfo.nombre : `Capítulo ${state.activeCapitulo}`;
     countText.innerHTML = `
@@ -1660,23 +1676,56 @@ function initComparatorModal() {
   if (btnClose) btnClose.onclick = () => modal.classList.add('hidden');
 }
 
+let currentCompItems = [];
+
 function openComparisonModal(choices = []) {
   const modal = document.getElementById('modal-comparator');
   const container = document.getElementById('comparator-matrix-content');
   if (!modal || !container) return;
 
-  const items = choices.map(choice => {
+  const defaultChoices = [{ code: '8517.13.00.00' }, { code: '8517.14.00.00' }];
+  const effectiveChoices = (choices && choices.length >= 2) ? choices : defaultChoices;
+
+  currentCompItems = effectiveChoices.map(choice => {
     const code = choice.code || choice.codigo10;
     const matches = state.searchEngine.search({ query: code });
     return matches.length > 0 ? matches[0] : null;
   }).filter(Boolean);
 
-  if (items.length < 2) {
-    showToast('⚠️ Se requieren al menos 2 subpartidas para realizar una comparación lado a lado.');
-    return;
+  if (currentCompItems.length < 2) {
+    const fallbackMatches = state.searchEngine.search({ capitulo: '85' });
+    currentCompItems = [fallbackMatches[0], fallbackMatches[1]];
   }
 
+  renderComparatorMatrix();
+  modal.classList.remove('hidden');
+}
+
+function renderComparatorMatrix() {
+  const container = document.getElementById('comparator-matrix-content');
+  if (!container) return;
+
+  const items = currentCompItems;
+
   container.innerHTML = `
+    <div style="margin-bottom: 16px; padding: 12px 16px; background: var(--panel-2); border: 1px solid var(--border-color); border-radius: 8px;">
+      <div style="font-weight: 700; font-size: 13px; color: var(--accent-blue); margin-bottom: 8px;">
+        ⚖️ Comparador Técnico Lado a Lado (Busca y selecciona cualquier par de subpartidas)
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="position: relative;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--accent-blue); display: block; margin-bottom: 4px;">🔵 Subpartida A:</label>
+          <input type="text" id="comp-input-a" class="stamp-input" placeholder="Buscar por código o producto A..." value="${items[0] ? items[0].codigo10 : ''}" style="width: 100%;">
+          <div id="comp-dropdown-a" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 200;"></div>
+        </div>
+        <div style="position: relative;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--brass); display: block; margin-bottom: 4px;">🟡 Subpartida B:</label>
+          <input type="text" id="comp-input-b" class="stamp-input" placeholder="Buscar por código o producto B..." value="${items[1] ? items[1].codigo10 : ''}" style="width: 100%;">
+          <div id="comp-dropdown-b" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 200;"></div>
+        </div>
+      </div>
+    </div>
+
     <div style="display: grid; grid-template-columns: repeat(${items.length}, 1fr); gap: 14px; overflow-x: auto;">
       ${items.map((item, index) => {
         const entityInfo = state.searchEngine.resolveEntity(item);
@@ -1690,7 +1739,7 @@ function openComparisonModal(choices = []) {
           <div style="border: 1.5px solid ${index === 0 ? 'var(--accent-blue)' : 'var(--border-color)'}; border-radius: 8px; padding: 14px; background: var(--bg-hover);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--accent-blue);">${item.codigo10}</span>
-              <span class="status-badge ${index === 0 ? 'status-confirmed' : 'status-orientative'}">${index === 0 ? 'Opción Principal' : 'Alternativa'}</span>
+              <span class="status-badge ${index === 0 ? 'status-confirmed' : 'status-orientative'}">${index === 0 ? 'Opción A' : 'Opción B'}</span>
             </div>
             <div style="font-weight: 700; font-size: 13px; margin-bottom: 10px; min-height: 38px;">${state.searchEngine.getDisplayDescription(item)}</div>
 
@@ -1722,7 +1771,8 @@ function openComparisonModal(choices = []) {
     </div>
   `;
 
-  modal.classList.remove('hidden');
+  setupCompInputAutocomplete('comp-input-a', 'comp-dropdown-a', 0);
+  setupCompInputAutocomplete('comp-input-b', 'comp-dropdown-b', 1);
 
   container.querySelectorAll('.select-comp-item').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1732,8 +1782,48 @@ function openComparisonModal(choices = []) {
         state.activeItem = matches[0];
         updateActiveItemPanel(state.activeItem);
       }
-      modal.classList.add('hidden');
+      document.getElementById('modal-comparator')?.classList.add('hidden');
     });
+  });
+}
+
+function setupCompInputAutocomplete(inputId, dropdownId, itemIndex) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  if (!input || !dropdown) return;
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim();
+    if (!val) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+    const matches = state.searchEngine.search({ query: val }).slice(0, 5);
+    if (matches.length === 0) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+    dropdown.innerHTML = matches.map(m => `
+      <div class="autocomplete-item" data-code="${m.codigo10}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); background: var(--panel);">
+        <strong style="color: var(--accent-blue);">${m.codigo10}</strong> - ${state.searchEngine.getDisplayDescription(m)}
+      </div>
+    `).join('');
+    dropdown.classList.remove('hidden');
+
+    dropdown.querySelectorAll('.autocomplete-item').forEach(itemEl => {
+      itemEl.addEventListener('click', () => {
+        const code = itemEl.dataset.code;
+        const selected = state.searchEngine.search({ query: code })[0];
+        if (selected) {
+          currentCompItems[itemIndex] = selected;
+          renderComparatorMatrix();
+        }
+      });
+    });
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => dropdown.classList.add('hidden'), 200);
   });
 }
 
@@ -1810,24 +1900,41 @@ function renderResolucionesTab(query = '') {
   if (!container) return;
 
   const resolutions = state.searchEngine.getSunatResolutions(query || (state.activeItem ? state.activeItem.codigo10 : ''));
+
+  const warningBannerHTML = `
+    <div class="legal-warning-banner" style="background: rgba(162, 63, 50, 0.12); border: 1.5px solid var(--seal); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+      <span style="font-size: 20px;">⚠️</span>
+      <div style="font-size: 11.5px; color: var(--text); line-height: 1.5;">
+        <strong style="color: var(--seal); font-size: 12px; display: block; margin-bottom: 2px;">AVISO LEGAL IMPORTANTE: Criterios Ilustrativos de Entrenamiento</strong>
+        Las resoluciones y criterios presentados a continuación son <strong>ejemplos demostrativos referenciales</strong> para entrenamiento técnico en clasificación aduanera. <strong>No constituyen resoluciones vinculantes individuales ni jurisprudencia oficial emitida por la SUNAT</strong>.
+      </div>
+    </div>
+  `;
+
   if (!resolutions.length) {
-    container.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px;">Sin resoluciones específicas registradas para esta búsqueda.</div>`;
+    container.innerHTML = `
+      ${warningBannerHTML}
+      <div style="padding: 16px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px;">Sin resoluciones específicas registradas para esta búsqueda.</div>
+    `;
     return;
   }
 
-  container.innerHTML = resolutions.map(r => `
-    <div class="res-item">
-      <div class="res-num">${r.numero}</div>
-      <div class="res-body">
-        <div class="t">${r.producto}</div>
-        <div class="d">${r.criterio}</div>
-        <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--brass); font-weight: 600;">
-          Subpartida Asignada: ${r.codigo10}
+  container.innerHTML = `
+    ${warningBannerHTML}
+    ${resolutions.map(r => `
+      <div class="res-item">
+        <div class="res-num">${r.numero}</div>
+        <div class="res-body">
+          <div class="t">${r.producto}</div>
+          <div class="d">${r.criterio}</div>
+          <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--brass); font-weight: 600;">
+            Subpartida Asignada: ${r.codigo10}
+          </div>
         </div>
+        <div class="res-tag">${r.entidad}</div>
       </div>
-      <div class="res-tag">${r.entidad}</div>
-    </div>
-  `).join('');
+    `).join('')}
+  `;
 }
 
 function renderNotasLegalesTab(item = state.activeItem) {
@@ -1836,8 +1943,15 @@ function renderNotasLegalesTab(item = state.activeItem) {
 
   const capId = item ? item.capitulo : '84';
   const notes = state.searchEngine.getLegalNotes(capId);
+  const badgeClass = notes.verificado ? 'verified-badge' : 'unverified-badge';
+  const badgeStyle = notes.verificado 
+    ? 'background: rgba(63, 135, 104, 0.15); color: var(--green); border: 1px solid var(--green);'
+    : 'background: rgba(166, 117, 31, 0.15); color: var(--amber); border: 1px solid var(--amber);';
 
   container.innerHTML = `
+    <div style="margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 700; font-family: var(--font-mono); ${badgeStyle}" class="${badgeClass}">
+      ${notes.verificadoBadge || (notes.verificado ? '✅ Verificado con Arancel Oficial SUNAT D.S. 404-2021-EF' : '⚠️ Nota Técnica Referencial — Pendiente de verificación directa con D.S. 404-2021-EF')}
+    </div>
     <div class="accordion">
       <div class="acc-item">
         <div class="acc-head">
@@ -1846,7 +1960,10 @@ function renderNotasLegalesTab(item = state.activeItem) {
         </div>
         <div class="acc-body">
           <p style="margin-bottom: 8px;"><strong>📌 Nota de Sección (Sistema Armonizado):</strong> ${notes.notaSeccion}</p>
-          <p><strong>📜 Nota Explicativa de Capítulo:</strong> ${notes.notaCapitulo}</p>
+          <p style="margin-bottom: 8px;"><strong>📜 Nota Explicativa de Capítulo:</strong> ${notes.notaCapitulo}</p>
+          <div style="font-size: 10px; color: var(--text-faint); margin-top: 6px; font-family: var(--font-mono);">
+            Fuente normativa: ${notes.fuente || 'D.S. N° 404-2021-EF SUNAT'}
+          </div>
         </div>
       </div>
       <div class="acc-item">
@@ -1946,16 +2063,32 @@ function initEditableExchangeRate() {
 
   let officialTC = 3.750;
 
+  function getFormattedTimestamp() {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+
   fetch('https://api.apis.net.pe/v1/tipo-cambio-sunat')
     .then(r => r.json())
     .then(data => {
       if (data && data.precioVenta) {
         officialTC = parseFloat(data.precioVenta);
+        if (!localStorage.getItem('arancel_tc_updated_at')) {
+          localStorage.setItem('arancel_tc_updated_at', getFormattedTimestamp());
+        }
         updateTCDisplays();
       }
     })
     .catch(() => {
       officialTC = 3.750;
+      if (!localStorage.getItem('arancel_tc_updated_at')) {
+        localStorage.setItem('arancel_tc_updated_at', getFormattedTimestamp());
+      }
       updateTCDisplays();
     });
 
@@ -1970,13 +2103,19 @@ function initEditableExchangeRate() {
   function updateTCDisplays() {
     const custom = localStorage.getItem('arancel_custom_tc');
     const effective = getEffectiveTC();
+    const updatedAt = localStorage.getItem('arancel_tc_updated_at') || getFormattedTimestamp();
 
     if (valDisplay) {
       if (custom) {
-        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Personalizado por usuario">✎ (Manual)</span>`;
+        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Modificado manualmente en la app el ${updatedAt}">✎ (Manual)</span>`;
       } else {
-        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Editar tipo de cambio">✎</span>`;
+        valDisplay.innerHTML = `S/. ${effective.toFixed(3)} <span class="tc-edit-icon" title="Guardado localmente el ${updatedAt}">✎ (SUNAT)</span>`;
       }
+    }
+
+    const tcMetaContainer = document.getElementById('tc-source-meta-display');
+    if (tcMetaContainer) {
+      tcMetaContainer.innerHTML = `🕒 Tipo de cambio guardado en el aplicativo: <strong>S/. ${effective.toFixed(3)} PEN</strong> (Última actualización local: ${updatedAt})`;
     }
 
     const inpageTcInput = document.getElementById('inpage-tc');
@@ -2004,6 +2143,7 @@ function initEditableExchangeRate() {
       const newVal = parseFloat(input.value);
       if (!isNaN(newVal) && newVal > 0) {
         localStorage.setItem('arancel_custom_tc', newVal.toString());
+        localStorage.setItem('arancel_tc_updated_at', getFormattedTimestamp());
         updateTCDisplays();
         showToast(`T.C. actualizado a S/. ${newVal.toFixed(3)}`);
       }
@@ -2014,6 +2154,7 @@ function initEditableExchangeRate() {
   if (btnReset) {
     btnReset.onclick = () => {
       localStorage.removeItem('arancel_custom_tc');
+      localStorage.setItem('arancel_tc_updated_at', getFormattedTimestamp());
       updateTCDisplays();
       showToast(`T.C. restablecido a SUNAT oficial (S/. ${officialTC.toFixed(3)})`);
       modal.classList.add('hidden');
