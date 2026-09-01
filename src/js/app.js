@@ -1,4 +1,5 @@
-import { SearchEngine } from './searchEngine.js?v=2.3.0';
+import dataset from '../data/arancel2022.json' with { type: 'json' };
+import { SearchEngine } from './searchEngine.js';
 import { GuidedClassifier } from './guidedClassifier.js';
 import { CompanyResolver } from './companyResolver.js';
 import { TariffCalculator } from './calculator.js';
@@ -8,7 +9,7 @@ const state = {
   searchEngine: null,
   guidedClassifier: null,
   companyResolver: null,
-  dataset: null,
+  dataset: dataset || null,
   activeItem: null,
   activeCapitulo: null,
   activeSeccion: null,
@@ -22,8 +23,12 @@ const state = {
 // Inicialización tras cargar el DOM
 async function initializeApp() {
   try {
-    const response = await fetch('./src/data/arancel2022.json');
-    state.dataset = await response.json();
+    if (dataset && dataset.subpartidas) {
+      state.dataset = dataset;
+    } else {
+      const response = await fetch('./src/data/arancel2022.json');
+      state.dataset = await response.json();
+    }
     state.searchEngine = new SearchEngine(state.dataset);
     state.guidedClassifier = new GuidedClassifier(state.searchEngine);
     state.companyResolver = new CompanyResolver(state.searchEngine);
