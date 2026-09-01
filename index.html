@@ -912,16 +912,14 @@
       document.body.appendChild(warning);
     }
   </script>
+  <script type="module" src="/src/js/app.js"></script>
   <script type="module">
-    if (window.location.protocol !== 'file:') {
-      import('./src/js/app.js?v=3.0.0');
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('[PWA] Service Worker registrado exitosamente:', reg.scope))
-            .catch(err => console.warn('[PWA] Error al registrar Service Worker:', err));
-        });
-      }
+    if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('[PWA] Service Worker registrado exitosamente:', reg.scope))
+          .catch(err => console.warn('[PWA] Error al registrar Service Worker:', err));
+      });
     }
   </script>
 </body>
